@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>SBS NEWSLETTER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://sbs.strathmore.edu/wp-content/uploads/2026/02/Strathmore-University-Logo-26.png">
+    <style>
+        :root { 
+            --sbs-red: #a4343a; --sbs-blue: #002147;
+            --sidebar-bg: #121417; --app-bg: #1e2023;
+            --text-main: #e0e0e0; --input-bg: #090a0c;
+            --accent: #3498db;
+        }
+
+        body.light-mode {
+            --sidebar-bg: #ffffff; --app-bg: #f0f2f5;
+            --text-main: #1a1d23; --input-bg: #ffffff;
+        }
+
+        body { margin: 0; background: var(--app-bg); font-family: 'Montserrat', Arial, sans-serif; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        
+        #sidebar { width: 380px; background: var(--sidebar-bg); border-right: 1px solid rgba(255,255,255,0.1); padding: 25px; overflow-y: auto; height: 100%; box-sizing: border-box; box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
+        .panel-section { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        body.light-mode .panel-section { background: #fff; border: 1px solid #ddd; }
+        
+        h2 { font-size: 14px; letter-spacing: 2px; color: var(--sbs-red); margin: 0 0 20px 0; padding-left: 10px; }
+        h3 { font-size: 11px; color: #888; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        body.light-mode h3 { color: #555; }
+
+        label { font-size: 10px; color: #aaa; display: block; margin: 12px 0 5px 0; text-transform: uppercase; font-weight: 600; }
+        body.light-mode label { color: #555; }
+
+        input, select { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 1px solid #333; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; font-size: 13px; transition: 0.2s; }
+        body.light-mode input, body.light-mode select { border-color: #ccc; }
+        input:focus { border-color: var(--sbs-red); outline: none; }
+
+        button { width: 100%; padding: 12px; background: #2c3040; color: #e0e0e0; border: 1px solid #444; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; font-size: 13px; transition: 0.2s; cursor: pointer; }
+        body.light-mode button { background: #1a1d23; color: #ffffff; border-color: #1a1d23; }
+        button:hover { background: var(--sbs-red); color: white; border-color: var(--sbs-red); }
+
+        .text-grid-btn { background: #2c3040; color: #e0e0e0; border: 1px solid #555; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        body.light-mode .text-grid-btn { background: #1a1d23; color: #ffffff; border-color: #1a1d23; }
+        .text-grid-btn:hover { background: var(--sbs-red); color: white; border-color: var(--sbs-red); }
+
+        .drag-item { background: #25282c; padding: 12px; border: 1px solid #3d424a; cursor: grab; margin-bottom: 8px; border-radius: 6px; font-size: 12px; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        body.light-mode .drag-item { background: #eef0f4; border-color: #ccc; color: #1a1d23; }
+        .drag-item:hover { border-color: var(--sbs-red); background: #2d3136; }
+        body.light-mode .drag-item:hover { background: #e0e3e8; }
+
+        #viewport { flex-grow: 1; padding: 100px 80px 40px 80px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; position: relative; }
+        #canvas { background: white; width: 600px; min-height: 800px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); color: #333 !important; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-family: 'Montserrat', Arial, sans-serif; }
+        #dropZone { min-height: 800px; padding-bottom: 100px; }
+
+        .comp-wrapper { position: relative; border: 2px solid transparent; cursor: pointer; outline: none; }
+        .comp-wrapper.active { border: 2px solid var(--sbs-red) !important; z-index: 100; }
+        .overlay-tools { position: absolute; right: 4px; top: 4px; display: none; flex-direction: row; gap: 4px; z-index: 200; }
+        .comp-wrapper:hover .overlay-tools, .comp-wrapper.active .overlay-tools { display: flex; }
+        
+        .tool-btn { width: 36px; height: 36px; background: #fff; color: #333; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .tool-btn:hover { background: var(--sbs-red); color: white; border-color: var(--sbs-red); }
+        .btn-delete { color: var(--sbs-red); }
+
+        .red-line { background: var(--sbs-red); margin-top: 8px; border: none; height: 2px; transition: 0.3s; }
+        .styled-content { outline: none; font-family: 'Montserrat', Arial, sans-serif; }
+        /* Canvas always renders as email — never inherit dark/light mode colors */
+        #canvas, #dropZone { color: #333 !important; background: white !important; }
+        .export-btn { background: var(--sbs-red); color: white; border: none; padding: 20px; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-top: 20px; font-size: 14px; letter-spacing: 1px; width: 100%; box-sizing: border-box; }
+        
+        #preview-bar { position: absolute; top: 30px; left: 420px; display: flex; gap: 8px; z-index: 50; }
+        .preview-btn { width: auto; padding: 10px 18px; background: #25282c; color: white; border: 1px solid #3d424a; border-radius: 30px; font-size: 11px; cursor: pointer; }
+        .preview-btn:hover { background: var(--sbs-red); }
+
+        .img-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; display: none; margin-bottom: 8px; border: 1px solid #444; }
+        body.light-mode .img-preview { border-color: #ccc; }
+
+        .btn-settings-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+        body.light-mode .btn-settings-box { background: #f5f5f5; border-color: #ddd; }
+
+        .format-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+        .format-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .format-row > div { flex: 1; }
+
+        .sbs-btn { display: inline-block; background: #a4343a; color: #ffffff !important; padding: 12px 30px; border-radius: 4px; text-decoration: none; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 10px; }
+        .sbs-btn:hover { background: #8a2a2e; }
+
+        /* ── IMAGE RESIZE SYSTEM ── */
+        .img-resize-wrapper {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+        }
+        .img-resize-wrapper.full-width {
+            display: block;
+            width: 100%;
+        }
+        .img-resize-wrapper img {
+            display: block;
+        }
+
+        /* Resize handles - hidden by default, shown on active */
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border: 2px solid #a4343a;
+            border-radius: 2px;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .img-resize-wrapper.resizing-active .resize-handle,
+        .img-resize-wrapper.img-selected .resize-handle { display: block; }
+
+        /* Corner handles */
+        .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+        .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+        /* Edge handles */
+        .resize-handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .resize-handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .resize-handle.w { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
+        .resize-handle.e { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
+
+        /* Selection border on image */
+        .img-resize-wrapper.img-selected::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid #a4343a;
+            pointer-events: none;
+            z-index: 199;
+        }
+
+        /* Image link indicator */
+        .img-link-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #002147;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 3px;
+            z-index: 201;
+            display: none;
+            pointer-events: none;
+        }
+        .img-resize-wrapper.has-link .img-link-badge { display: block; }
+
+        /* Image settings panel highlight */
+        .img-settings-panel { 
+            background: rgba(164,52,58,0.08); 
+            border: 1px solid rgba(164,52,58,0.3); 
+            border-radius: 6px; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+        }
+
+        /* ── FIX: Suppress Edge/Chromium native image resize handles ── */
+        #dropZone img {
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+            max-width: 100% !important;
+            height: auto;
+        }
+        #sidebar img { pointer-events: auto; }
+
+        /* ── TEMPLATE MODAL ── */
+        #tmpl-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center; }
+        #tmpl-overlay.open { display:flex; }
+        #tmpl-modal { background:#1a1d23; border-radius:12px; width:860px; max-width:95vw; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 30px 80px rgba(0,0,0,0.6); overflow:hidden; }
+        body.light-mode #tmpl-modal { background:#f4f6fa; }
+        #tmpl-modal-header { padding:20px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        body.light-mode #tmpl-modal-header { border-bottom-color:#ddd; }
+        #tmpl-modal-header h2 { margin:0; font-size:16px; letter-spacing:1px; color:var(--sbs-red); padding:0; }
+        #tmpl-close { background:none; border:none; color:#888; font-size:22px; cursor:pointer; width:auto; padding:4px 10px; margin:0; }
+        #tmpl-close:hover { color:#fff; background:none; }
+        body.light-mode #tmpl-close:hover { color:#000; }
+        #tmpl-tabs { display:flex; gap:0; padding:0 24px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0; }
+        body.light-mode #tmpl-tabs { border-bottom-color:#ddd; }
+        .tmpl-tab { padding:12px 20px; font-size:12px; cursor:pointer; border-bottom:2px solid transparent; color:#888; transition:0.2s; background:none; border-radius:0; width:auto; margin:0; }
+        .tmpl-tab.active { color:#e0e0e0; border-bottom-color:var(--sbs-red); }
+        body.light-mode .tmpl-tab { color:#555; }
+        body.light-mode .tmpl-tab.active { color:#1a1d23; }
+        .tmpl-tab:hover { color:#e0e0e0; background:none; border-bottom-color:rgba(164,52,58,0.4); }
+        #tmpl-body { flex:1; overflow-y:auto; padding:24px; }
+        .tmpl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+        .tmpl-card { background:#25282c; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:0.2s; }
+        body.light-mode .tmpl-card { background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        .tmpl-card:hover { border-color:var(--sbs-red); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+        .tmpl-preview { width:100%; height:140px; overflow:hidden; position:relative; background:#fff; }
+        .tmpl-preview iframe { width:600px; height:480px; border:none; transform-origin:top left; pointer-events:none; }
+        .tmpl-info { padding:12px; }
+        .tmpl-name { font-size:13px; font-weight:600; color:#e0e0e0; margin-bottom:4px; }
+        body.light-mode .tmpl-name { color:#1a1d23; }
+        .tmpl-desc { font-size:10px; color:#666; line-height:1.4; }
+        .tmpl-actions { padding:0 12px 12px; display:flex; gap:6px; }
+        .tmpl-use-btn { flex:1; padding:8px; background:var(--sbs-red); color:#fff; border:none; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; margin:0; }
+        .tmpl-use-btn:hover { background:#8a2a2e; }
+        .tmpl-del-btn { padding:8px 10px; background:#2c3040; color:#aaa; border:1px solid #444; border-radius:4px; font-size:11px; cursor:pointer; margin:0; width:auto; }
+        .tmpl-del-btn:hover { background:#a4343a; color:#fff; border-color:#a4343a; }
+        #tmpl-save-bar { padding:16px 24px; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:10px; align-items:center; flex-shrink:0; }
+        body.light-mode #tmpl-save-bar { border-top-color:#ddd; }
+        #tmpl-name-input { flex:1; padding:10px 14px; background:#090a0c; color:#e0e0e0; border:1px solid #333; border-radius:6px; font-size:13px; margin:0; }
+        body.light-mode #tmpl-name-input { background:#fff; color:#1a1d23; border-color:#ccc; }
+        #tmpl-save-btn { padding:10px 22px; background:var(--sbs-blue); color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin:0; }
+        #tmpl-save-btn:hover { background:var(--sbs-red); }
+        .tmpl-empty { text-align:center; padding:60px 20px; color:#555; font-size:13px; }
+        .tmpl-empty span { font-size:36px; display:block; margin-bottom:12px; }
+        .tmpl-tag { display:inline-block; font-size:9px; padding:2px 6px; border-radius:3px; background:rgba(164,52,58,0.2); color:#a4343a; font-weight:700; letter-spacing:0.5px; margin-bottom:4px; }
+
+        /* ── MOBILE ── */
+        @media screen and (max-width: 660px) {
+            body { overflow-x: hidden; }
+            #sidebar { display: none !important; }
+            #viewport { padding: 0 !important; align-items: flex-start !important; width: 100vw !important; overflow-x: hidden !important; }
+            #preview-bar { position: fixed !important; top: 8px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 9999 !important; gap: 6px !important; background: rgba(18,20,23,0.92) !important; padding: 6px 10px !important; border-radius: 30px !important; backdrop-filter: blur(8px) !important; width: auto !important; }
+            .preview-btn { padding: 7px 12px !important; font-size: 10px !important; }
+            #canvas-scaler { transform-origin: top left; width: 600px !important; }
+            #canvas { width: 600px !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>SBS Studio Pro</h2>
+    
+    <div class="panel-section">
+        <h3>Workspace</h3>
+        <button onclick="toggleTheme()" style="background: var(--sbs-blue); border: none; color: white;">🌗 Switch Theme Mode</button>
+    </div>
+
+    <div class="panel-section">
+        <h3>1. Layout Library</h3>
+        <div id="inventory">
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="lets-go-out">🌆 Let's Go Out</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="header">🔝 Header Banner</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="thin-title">➖ Section Title</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="text-only">📄 Text Block</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="media-text">🌗 Media + Text</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="featured-cards">🃏 Featured Cards Grid</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="riddle-block">🧩 Riddle &amp; Pun</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="events-block">📅 Upcoming Events</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="programmes-block">🎓 Upcoming Programmes</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="footer-queries">💬 Queries Footer</div>
+            <div class="drag-item" draggable="true" ondragstart="drag(event)" data-type="footer-corp">🏢 Corporate Contacts</div>
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <h3>2. Text Engine</h3>
+        <div class="format-grid">
+            <button class="text-grid-btn" onmousedown="_saveSelection()" onclick="doStyle('bold')"><b>B</b></button>
+            <button class="text-grid-btn" onmousedown="_saveSelection()" onclick="doStyle('italic')"><i>I</i></button>
+            <button class="text-grid-btn" onmousedown="_saveSelection()" onclick="doStyle('underline')"><u>U</u></button>
+        </div>
+        <div class="format-row">
+            <div>
+                <label>Font Size</label>
+                <select onmousedown="_saveSelection()" onchange="doSize(this.value)" style="width:100%; padding:10px; background:var(--input-bg); color:var(--text-main); border:1px solid #333; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                    <option value="" disabled selected>— pick size —</option>
+                    <option value="9">9px</option>
+                    <option value="10">10px</option>
+                    <option value="11">11px</option>
+                    <option value="12">12px</option>
+                    <option value="13">13px</option>
+                    <option value="14">14px</option>
+                    <option value="16">16px</option>
+                    <option value="18">18px</option>
+                    <option value="20">20px</option>
+                    <option value="22">22px</option>
+                    <option value="24">24px</option>
+                    <option value="26">26px</option>
+                    <option value="28">28px</option>
+                    <option value="32">32px</option>
+                    <option value="36">36px</option>
+                    <option value="42">42px</option>
+                    <option value="48">48px</option>
+                    <option value="56">56px</option>
+                    <option value="64">64px</option>
+                </select>
+            </div>
+            <div><label>Color</label><input type="color" onmousedown="_saveSelection()" oninput="doStyle('foreColor', this.value)" style="height:42px; padding:2px;"></div>
+        </div>
+    </div>
+
+    <div id="dynamicControls" class="panel-section">
+        <h3>3. Component Settings</h3>
+        <p style="font-size:10px; opacity:0.5;">Click a container on the canvas to edit.</p>
+    </div>
+
+    <button class="export-btn" onclick="exportNewsletter()">Copy Export Code</button>
+    <button class="export-btn" onclick="copyNewsletterForEmail()" style="margin-top:8px; background:#002147;">📧 Copy for Email (Paste into Outlook)</button>
+    <button class="export-btn" onclick="openTemplates()" style="margin-top:8px; background:#1a472a;">📐 Templates</button>
+</div>
+
+<!-- ── TEMPLATE MODAL ── -->
+<div id="tmpl-overlay">
+    <div id="tmpl-modal">
+        <div id="tmpl-modal-header">
+            <h2>📐 TEMPLATE GALLERY</h2>
+            <button id="tmpl-close" onclick="closeTemplates()">✕</button>
+        </div>
+        <div id="tmpl-tabs">
+            <button class="tmpl-tab active" onclick="tmplSwitchTab('starter',this)">🏛 Starter Templates</button>
+            <button class="tmpl-tab" onclick="tmplSwitchTab('saved',this)">💾 My Saved Templates</button>
+        </div>
+        <div id="tmpl-body">
+            <div class="tmpl-grid" id="tmpl-grid"></div>
+        </div>
+        <div id="tmpl-save-bar">
+            <span style="font-size:11px; color:#888; white-space:nowrap;">Save current canvas:</span>
+            <input id="tmpl-name-input" type="text" placeholder="Template name e.g. Monthly Newsletter…">
+            <button id="tmpl-save-btn" onclick="saveCurrentAsTemplate()">💾 Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="viewport">
+    <div id="preview-bar">
+        <button class="preview-btn" onclick="resizeCanvas(600)">🖥️ Desktop</button>
+        <button class="preview-btn" onclick="resizeCanvas(480)">📟 Tablet</button>
+        <button class="preview-btn" onclick="resizeCanvas(320)">📱 Mobile</button>
+    </div>
+    <div id="canvas-scaler"><div id="canvas">
+        <div id="dropZone" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    </div>
+</div></div>
+
+<script>
+
+    // ── MOBILE CANVAS SCALING ──
+    function applyMobileScale() {
+        const scaler = document.getElementById('canvas-scaler');
+        const viewport = document.getElementById('viewport');
+        if (!scaler) return;
+        const vw = window.innerWidth;
+        if (vw <= 660) {
+            const scale = vw / 600;
+            scaler.style.transform = 'scale(' + scale + ')';
+            scaler.style.transformOrigin = 'top left';
+            scaler.style.width = '600px';
+            scaler.style.height = '';
+            requestAnimationFrame(() => {
+                const naturalH = scaler.getBoundingClientRect().height;
+                scaler.parentElement.style.minHeight = (naturalH) + 'px';
+            });
+            if (viewport) viewport.style.paddingTop = '50px';
+        } else {
+            scaler.style.transform = '';
+            scaler.style.width = '';
+            if (viewport) viewport.style.paddingTop = '';
+            if (scaler.parentElement) scaler.parentElement.style.minHeight = '';
+        }
+    }
+
+    window.addEventListener('resize', applyMobileScale);
+    document.addEventListener('DOMContentLoaded', applyMobileScale);
+
+    let activeElement = null;
+    let _activeImgWrapper = null; // Currently selected image wrapper
+
+    // ── IMAGE RESIZE ENGINE ──────────────────────────────────────────────────
+
+    /**
+     * Wraps an <img> in a resize-capable wrapper with 8 handles.
+     * Skips images that are already wrapped.
+     */
+    function makeImageResizable(img) {
+        if (img.closest('.img-resize-wrapper')) return; // already wrapped
+
+        const isFullWidth = !img.style.width || img.style.width === '100%';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'img-resize-wrapper' + (isFullWidth ? ' full-width' : '');
+        wrapper.dataset.imgHref = '';
+        wrapper.dataset.imgTarget = '_blank';
+
+        // Set wrapper size to match current image size
+        if (!isFullWidth) {
+            wrapper.style.width = img.offsetWidth + 'px';
+        }
+
+        // Insert wrapper before img, move img inside
+        img.parentNode.insertBefore(wrapper, img);
+        wrapper.appendChild(img);
+
+        // Remove hard-coded width/height from img; let wrapper control size
+        img.removeAttribute('width');
+        img.removeAttribute('height');
+        img.style.width = '100%';
+        img.style.height = 'auto';
+        img.style.display = 'block';
+
+        // Link badge
+        const badge = document.createElement('span');
+        badge.className = 'img-link-badge';
+        badge.textContent = '🔗 LINK';
+        wrapper.appendChild(badge);
+
+        // Create 8 handles
+        ['nw','n','ne','w','e','sw','s','se'].forEach(dir => {
+            const handle = document.createElement('div');
+            handle.className = 'resize-handle ' + dir;
+            handle.dataset.dir = dir;
+            wrapper.appendChild(handle);
+            attachResizeDrag(handle, wrapper, img);
+        });
+
+        // Click on wrapper selects image for editing
+        wrapper.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('resize-handle')) return;
+            e.stopPropagation();
+            selectImageWrapper(wrapper);
+        });
+
+        return wrapper;
+    }
+
+    function selectImageWrapper(wrapper) {
+        // Deselect previous
+        if (_activeImgWrapper && _activeImgWrapper !== wrapper) {
+            _activeImgWrapper.classList.remove('img-selected');
+        }
+        _activeImgWrapper = wrapper;
+        wrapper.classList.add('img-selected');
+        showImageSidebarPanel(wrapper);
+    }
+
+    function deselectAllImages() {
+        document.querySelectorAll('.img-resize-wrapper.img-selected').forEach(w => w.classList.remove('img-selected'));
+        _activeImgWrapper = null;
+    }
+
+    /**
+     * Shows the image settings panel in the sidebar.
+     */
+    function showImageSidebarPanel(wrapper) {
+        const img = wrapper.querySelector('img');
+        const currentHref = wrapper.dataset.imgHref || '';
+        const currentTarget = wrapper.dataset.imgTarget || '_blank';
+        const currentWidth = wrapper.style.width || '100%';
+
+        const panel = document.getElementById('dynamicControls');
+        panel.innerHTML = `
+        <h3>🖼 Image Settings</h3>
+        <div class="img-settings-panel">
+            <p style="font-size:10px; color:#a4343a; margin:0 0 8px 0; font-weight:700;">✅ Image Selected — drag handles to resize</p>
+            
+            <label>Image Width</label>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+                <input type="range" id="imgWidthSlider" min="50" max="600" value="${parseInt(currentWidth)||600}" 
+                    oninput="imgSetWidth(this.value); document.getElementById('imgWidthVal').textContent=this.value+'px';" 
+                    style="flex:1; padding:4px; margin:0;">
+                <span id="imgWidthVal" style="font-size:11px; color:#aaa; min-width:40px;">${parseInt(currentWidth)||600}px</span>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <button onclick="imgSetWidthPct(100)" style="flex:1; padding:6px; font-size:11px; margin:0; background:#2c3040; border-color:#555;">Full Width</button>
+                <button onclick="imgSetWidthPct(75)" style="flex:1; padding:6px; font-size:11px; margin:0; background:#2c3040; border-color:#555;">75%</button>
+                <button onclick="imgSetWidthPct(50)" style="flex:1; padding:6px; font-size:11px; margin:0; background:#2c3040; border-color:#555;">50%</button>
+                <button onclick="imgSetWidthPct(33)" style="flex:1; padding:6px; font-size:11px; margin:0; background:#2c3040; border-color:#555;">33%</button>
+            </div>
+
+            <label>Alignment</label>
+            <select onchange="imgSetAlign(this.value)" style="margin-bottom:10px;">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+            </select>
+
+            <label>Border Radius (px)</label>
+            <input type="range" min="0" max="50" value="0" oninput="imgSetRadius(this.value)" style="padding:4px;">
+        </div>
+
+        <div class="img-settings-panel" style="border-color:rgba(0,33,71,0.4); background:rgba(0,33,71,0.06);">
+            <p style="font-size:10px; color:#002147; margin:0 0 8px 0; font-weight:700;">🔗 Image Link</p>
+            
+            <label>Link URL (leave empty = no link)</label>
+            <input type="text" id="imgLinkUrl" placeholder="https://sbs.strathmore.edu/..." 
+                value="${currentHref}" oninput="imgSetLink(this.value)" style="margin-bottom:6px;">
+            
+            <label>Open Link In</label>
+            <select id="imgLinkTarget" onchange="imgSetLinkTarget(this.value)">
+                <option value="_blank" ${currentTarget==='_blank'?'selected':''}>New Tab</option>
+                <option value="_self" ${currentTarget==='_self'?'selected':''}>Same Tab</option>
+            </select>
+
+            ${currentHref ? `<p style="font-size:10px; color:#3498db; margin:4px 0 0 0;">✓ Link active: <a href="${currentHref}" target="_blank" style="color:#3498db;">${currentHref.substring(0,40)}${currentHref.length>40?'…':''}</a></p>` : `<p style="font-size:10px; color:#666; margin:4px 0 0 0;">No link set. Add a URL above.</p>`}
+        </div>
+
+        <button onclick="deselectAllImages(); renderControls(activeElement ? activeElement.dataset.type : '');" 
+            style="background:#2c3040; border-color:#555; font-size:11px; padding:8px; margin-top:4px;">
+            ← Back to Block Settings
+        </button>`;
+    }
+
+    // Image property setters (operate on _activeImgWrapper)
+    function imgSetWidth(px) {
+        if (!_activeImgWrapper) return;
+        const pxNum = parseInt(px);
+        _activeImgWrapper.style.width = pxNum + 'px';
+        _activeImgWrapper.classList.remove('full-width');
+    }
+
+    function imgSetWidthPct(pct) {
+        if (!_activeImgWrapper) return;
+        if (pct >= 100) {
+            _activeImgWrapper.style.width = '100%';
+            _activeImgWrapper.classList.add('full-width');
+        } else {
+            // Compute pixel equivalent of pct relative to canvas (600px)
+            const px = Math.round(600 * pct / 100);
+            _activeImgWrapper.style.width = px + 'px';
+            _activeImgWrapper.classList.remove('full-width');
+        }
+        // Update slider
+        const slider = document.getElementById('imgWidthSlider');
+        const valEl = document.getElementById('imgWidthVal');
+        if (slider) slider.value = parseInt(_activeImgWrapper.style.width) || 600;
+        if (valEl) valEl.textContent = _activeImgWrapper.style.width;
+    }
+
+    function imgSetAlign(val) {
+        if (!_activeImgWrapper) return;
+        _activeImgWrapper.style.marginLeft = val === 'center' ? 'auto' : val === 'right' ? 'auto' : '0';
+        _activeImgWrapper.style.marginRight = val === 'center' ? 'auto' : val === 'right' ? '0' : 'auto';
+        if (val === 'left') { _activeImgWrapper.style.marginLeft = '0'; _activeImgWrapper.style.marginRight = 'auto'; }
+        if (val === 'right') { _activeImgWrapper.style.marginLeft = 'auto'; _activeImgWrapper.style.marginRight = '0'; }
+    }
+
+    function imgSetRadius(px) {
+        if (!_activeImgWrapper) return;
+        const img = _activeImgWrapper.querySelector('img');
+        if (img) img.style.borderRadius = px + 'px';
+    }
+
+    function imgSetLink(url) {
+        if (!_activeImgWrapper) return;
+        _activeImgWrapper.dataset.imgHref = url;
+        if (url) {
+            _activeImgWrapper.classList.add('has-link');
+        } else {
+            _activeImgWrapper.classList.remove('has-link');
+        }
+    }
+
+    function imgSetLinkTarget(val) {
+        if (!_activeImgWrapper) return;
+        _activeImgWrapper.dataset.imgTarget = val;
+    }
+
+    /**
+     * Attach drag-resize behaviour to a single handle.
+     */
+    function attachResizeDrag(handle, wrapper, img) {
+        handle.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const dir = handle.dataset.dir;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startW = wrapper.offsetWidth;
+            const startH = img.offsetHeight; // natural height to preserve ratio
+            const ratio = startH / startW; // aspect ratio
+
+            wrapper.classList.add('resizing-active');
+            document.body.style.cursor = handle.style.cursor;
+            document.body.style.userSelect = 'none';
+
+            function onMove(ev) {
+                let dx = ev.clientX - startX;
+                let dy = ev.clientY - startY;
+                let newW = startW;
+
+                // Horizontal component
+                if (dir.includes('e')) newW = Math.max(60, startW + dx);
+                if (dir.includes('w')) newW = Math.max(60, startW - dx);
+
+                // If vertical-only handle, derive width from height change
+                if (dir === 'n' || dir === 's') {
+                    const hChange = dir === 's' ? dy : -dy;
+                    newW = Math.max(60, startW + hChange / ratio);
+                }
+
+                // Cap to container width
+                const maxW = wrapper.closest('#dropZone') ? wrapper.closest('#dropZone').offsetWidth : 600;
+                newW = Math.min(newW, maxW);
+
+                wrapper.style.width = Math.round(newW) + 'px';
+                wrapper.classList.remove('full-width');
+
+                // Update sidebar slider if visible
+                const slider = document.getElementById('imgWidthSlider');
+                const valEl = document.getElementById('imgWidthVal');
+                if (slider) slider.value = Math.round(newW);
+                if (valEl) valEl.textContent = Math.round(newW) + 'px';
+            }
+
+            function onUp() {
+                wrapper.classList.remove('resizing-active');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            }
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
+
+    /**
+     * After any block is created, wrap all unwrapped images inside it.
+     */
+    function wrapImagesInBlock(wrapper) {
+        wrapper.querySelectorAll('img').forEach(img => {
+            if (!img.closest('.img-resize-wrapper')) {
+                makeImageResizable(img);
+            }
+        });
+    }
+
+    // Intercept mousedown on images to prevent browser native resize
+    document.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'IMG' && e.target.closest('#dropZone')) {
+            e.preventDefault();
+            const imgWrapper = e.target.closest('.img-resize-wrapper');
+            if (imgWrapper) {
+                selectImageWrapper(imgWrapper);
+            } else {
+                const compWrapper = e.target.closest('.comp-wrapper');
+                if (compWrapper) compWrapper.click();
+            }
+        }
+    }, true);
+
+    // MutationObserver to prevent rogue width/height attributes
+    const _imgObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.type === 'attributes' && m.target.tagName === 'IMG' &&
+                m.target.closest('#dropZone') &&
+                (m.attributeName === 'width' || m.attributeName === 'height')) {
+                m.target.removeAttribute('width');
+                m.target.removeAttribute('height');
+                m.target.style.width = '100%';
+                m.target.style.maxWidth = '100%';
+                m.target.style.height = 'auto';
+            }
+        });
+    });
+    _imgObserver.observe(document.getElementById('dropZone') || document.body, {
+        subtree: true, attributes: true, attributeFilter: ['width', 'height']
+    });
+
+    function _reattachImgObserver() {
+        _imgObserver.disconnect();
+        const dz = document.getElementById('dropZone');
+        if (dz) _imgObserver.observe(dz, { subtree: true, attributes: true, attributeFilter: ['width', 'height'] });
+    }
+
+    // ── CORE FUNCTIONS ───────────────────────────────────────────────────────
+
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+    function resizeCanvas(width) { document.getElementById('canvas').style.width = width + 'px'; }
+
+    // ── SAVED SELECTION — preserves text selection when sidebar inputs steal focus ──
+    let _savedRange = null;
+
+    function _saveSelection() {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            _savedRange = sel.getRangeAt(0).cloneRange();
+        }
+    }
+
+    function _restoreSelection() {
+        if (!_savedRange) return false;
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(_savedRange);
+        return true;
+    }
+
+    // Save selection whenever user selects text inside the canvas
+    document.getElementById('dropZone') && document.addEventListener('mouseup', function(e) {
+        if (e.target.closest('#dropZone')) {
+            setTimeout(_saveSelection, 0);
+        }
+    });
+    document.addEventListener('keyup', function(e) {
+        if (e.target.closest && e.target.closest('#dropZone')) {
+            _saveSelection();
+        }
+    });
+
+    function doStyle(cmd, val = null) {
+        if (cmd === 'foreColor' && val) {
+            // execCommand foreColor wraps in <font> tags which email clients ignore.
+            // Instead inject a <span style="color"> exactly like doSize does.
+            if (!_restoreSelection()) return;
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+            const range = sel.getRangeAt(0);
+            // Verify selection is inside contenteditable
+            let node = range.commonAncestorContainer;
+            while (node && node !== document) {
+                if (node.contentEditable === 'true') break;
+                node = node.parentNode;
+            }
+            if (!node || node === document) return;
+            try {
+                const span = document.createElement('span');
+                span.style.color = val;
+                span.style.fontFamily = 'inherit';
+                span.style.fontSize = 'inherit';
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+                _savedRange = newRange.cloneRange();
+            } catch(e) {
+                try { document.execCommand('foreColor', false, val); } catch(ex) {}
+            }
+            return;
+        }
+        _restoreSelection();
+        document.execCommand(cmd, false, val);
+        setTimeout(_saveSelection, 0);
+    }
+    function doSize(px) {
+        const pxNum = parseInt(px);
+        if (!pxNum || pxNum < 1) return;
+
+        // Restore the saved selection (input focus stole it)
+        if (!_restoreSelection()) return;
+
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+        const range = sel.getRangeAt(0);
+
+        // Verify selection is inside a contenteditable area
+        let node = range.commonAncestorContainer;
+        while (node && node !== document) {
+            if (node.contentEditable === 'true') break;
+            node = node.parentNode;
+        }
+        if (!node || node === document) return;
+
+        try {
+            const span = document.createElement('span');
+            span.style.fontSize = pxNum + 'px';
+            span.style.fontFamily = 'inherit';
+            span.style.lineHeight = 'inherit';
+            const fragment = range.extractContents();
+            span.appendChild(fragment);
+            range.insertNode(span);
+            // Re-select the newly wrapped text
+            const newRange = document.createRange();
+            newRange.selectNodeContents(span);
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+            _savedRange = newRange.cloneRange();
+        } catch(e) {
+            try { document.execCommand('fontSize', false, '7'); } catch(ex) {}
+        }
+    }
+
+    function drag(ev) { ev.dataTransfer.setData("type", ev.target.dataset.type); }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drop(ev) {
+        ev.preventDefault();
+        const type = ev.dataTransfer.getData("type");
+        if (!type) return;
+        createBlock(type);
+    }
+
+    function createBlock(type) {
+        const wrapper = document.createElement('div');
+        wrapper.className = "comp-wrapper";
+        wrapper.dataset.type = type;
+        
+        wrapper.onclick = (e) => {
+            const isEditable = e.target.isContentEditable || e.target.closest('[contenteditable]');
+            e.stopPropagation();
+            selectElement(wrapper, !isEditable);
+        };
+
+        wrapper.innerHTML = `
+            <div class="overlay-tools">
+                <button class="tool-btn" title="Move up" onclick="moveBlock(this, -1)">▲</button>
+                <button class="tool-btn" title="Move down" onclick="moveBlock(this, 1)">▼</button>
+                <button class="tool-btn btn-delete" title="Delete" onclick="this.closest('.comp-wrapper').remove()">✕</button>
+            </div>
+            <div class="content-box">${getTemplate(type)}</div>`;
+        
+        document.getElementById('dropZone').appendChild(wrapper);
+        
+        // Wrap images in the new block
+        wrapImagesInBlock(wrapper);
+        _reattachImgObserver();
+        selectElement(wrapper);
+        if(typeof applyMobileScale === 'function') applyMobileScale();
+    }
+
+    function selectElement(el, takeFocus = true) {
+        if (activeElement) activeElement.classList.remove('active');
+        activeElement = el;
+        activeElement.classList.add('active');
+        deselectAllImages();
+        renderControls(el.dataset.type);
+        if (takeFocus) el.focus();
+    }
+
+    function moveBlock(btn, dir) {
+        const el = btn.closest('.comp-wrapper');
+        if (dir === -1 && el.previousElementSibling) el.parentNode.insertBefore(el, el.previousElementSibling);
+        if (dir === 1 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
+    }
+
+    // ─── TEMPLATES ───────────────────────────────────────────────────────────
+
+    function getTemplate(type) {
+        const titleMarkup = `<div class="block-title-area" style="display:none; margin-bottom:15px;">
+            <div style="text-align:left;" class="title-line-wrapper">
+                <h3 contenteditable="true" class="inner-title styled-content" style="margin:0; font-size:20px; color:#a4343a; font-family:'Montserrat',Arial,sans-serif; display:inline;">Block Title</h3>
+                <div class="inner-line red-line" style="display:none; width:60px; height:2px; background:#a4343a; border:none; margin-top:8px;"></div>
+            </div>
+        </div>`;
+
+        const btnMarkup = `<div class="btn-area" style="display:none; margin-top:12px; text-align:left;">
+            <a href="#" class="sbs-btn block-cta-btn" style="display:inline-block; background:#a4343a; color:#ffffff; padding:12px 30px; border-radius:4px; text-decoration:none; font-weight:700; font-size:14px; cursor:pointer; margin-top:10px;">Click Here</a>
+        </div>`;
+
+        switch(type) {
+            case 'lets-go-out':
+                return `
+                <!-- ═══ LET'S GO OUT — Header ═══ -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" class="lgo-header-table" bgcolor="#eeeeee"
+                    style="width:100%; border-collapse:collapse; background-color:#eeeeee; background-image:url('https://sbs.strathmore.edu/wp-content/uploads/2023/03/strathmore-log-pattern-small.png'); background-size:cover;">
+                    <tr>
+                        <td align="center" style="padding:0;">
+                            <!-- Inner table carries the Let's Go Out! illustration on the right -->
+                            <table width="100%" height="220" border="0" cellpadding="0" cellspacing="0"
+                                style="width:100%; min-height:220px; border-collapse:collapse;
+                                       background-image:url('https://sbs.strathmore.edu/wp-content/uploads/2022/11/lets-go-out-2.png');
+                                       background-size:contain; background-repeat:no-repeat; background-position:right center;">
+                                <tr>
+                                    <td valign="middle" align="center" style="padding:0;">
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                            <tr>
+                                                <!-- LEFT: "Let's Go Out!" title -->
+                                                <td width="50%" valign="middle" align="left" style="width:50%; padding:30px 20px 30px 30px; vertical-align:middle;">
+                                                    <div contenteditable="true" class="lgo-title styled-content"
+                                                        style="font-family:'Montserrat',Arial,sans-serif; font-size:40px; color:#a3434c; font-weight:200;
+                                                               line-height:1.2; letter-spacing:0.15px; border-bottom:4px solid #ffce01;
+                                                               display:inline-block; padding-bottom:10px; margin:0;">Let's Go<br>Out!</div>
+                                                </td>
+                                                <!-- RIGHT: empty — illustration sits in bg -->
+                                                <td width="50%" style="width:50%;"></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ═══ LET'S GO OUT — Content Card ═══ -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" class="lgo-card-table" bgcolor="#eeeeee"
+                    style="width:100%; border-collapse:collapse; background-color:#eeeeee;
+                           background-image:url('https://sbs.strathmore.edu/wp-content/uploads/2023/03/strathmore-log-pattern.png');
+                           background-size:cover;">
+                    <tr>
+                        <td align="center" style="padding:0;">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                <tr>
+                                    <td align="center" style="padding:20px 30px;">
+                                        <!-- Two-col: image left, text right — matching reference exactly -->
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                            <tr>
+                                                <!-- IMAGE COL -->
+                                                <th class="nsl-col" width="57%" valign="top" align="left"
+                                                    style="width:57%; vertical-align:top; padding:0; font-weight:normal;">
+                                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                                        <tr>
+                                                            <td style="line-height:0; font-size:0;">
+                                                                <a href="#" class="lgo-img-link" target="_blank" rel="noopener" style="display:block; line-height:0; text-decoration:none;">
+                                                                    <img class="lgo-img nsl-img" src="https://sbs.strathmore.edu/wp-content/uploads/2026/03/True_Fine_Dining_in_Nairobi_Kenya_Talisman_is_the_PERFECT_Restaurant_for_Foodies_and_Wine_Lovers.gif"
+                                                                        alt="Place image" width="400" border="0"
+                                                                        style="width:100%; max-width:100%; display:block; border:0; height:auto; border-radius:4px;">
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        <!-- editor-only inputs -->
+                                                        <tr class="lgo-img-url-bar">
+                                                            <td style="padding-top:4px;">
+                                                                <input type="text" placeholder="Image URL…"
+                                                                    oninput="this.closest('.comp-wrapper').querySelector('.lgo-img').src=this.value"
+                                                                    style="font-size:11px;padding:5px 8px;border:1px dashed #ccc;border-radius:4px;color:#666;background:#f9f9f9;width:100%;box-sizing:border-box;margin:0;">
+                                                                <input type="text" placeholder="Image click link (optional)…"
+                                                                    oninput="this.closest('.comp-wrapper').querySelector('.lgo-img-link').href=this.value"
+                                                                    style="font-size:11px;padding:5px 8px;border:1px dashed #ccc;border-radius:4px;color:#666;background:#f9f9f9;width:100%;box-sizing:border-box;margin:0;margin-top:3px;">
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </th>
+                                                <!-- SPACER COL -->
+                                                <th class="nsl-gap" width="20" align="center" style="width:20px; font-weight:normal; font-size:0; line-height:0;">&nbsp;</th>
+                                                <!-- TEXT COL -->
+                                                <th class="nsl-col" width="40%" valign="top" align="left"
+                                                    style="width:40%; vertical-align:top; padding:0; font-weight:normal;">
+                                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                                        <tr>
+                                                            <td align="left" style="padding:0;">
+                                                                <h3 contenteditable="true" class="lgo-place-name styled-content"
+                                                                    style="font-family:'Montserrat',Arial,sans-serif; font-size:18px; font-weight:700;
+                                                                           color:#a4343a; margin:0 0 10px 0; line-height:1.2;">The Talisman Restaurant</h3>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td align="left" style="padding:0;">
+                                                                <div contenteditable="true" class="lgo-place-body styled-content"
+                                                                    style="font-family:'Montserrat',Arial,sans-serif; font-size:14px; color:#737373;
+                                                                           font-weight:400; line-height:1.2;">
+                                                                    The Talisman Restaurant is located at 320 Ngong Road, Karen, Nairobi. This iconic Gastro Lounge turns dining into an experience with eclectic décor, lush gardens and a warm, relaxed vibe. The menu blends global flavours with standout dishes like feta &amp; coriander samosas and fusion mains.<br><br>
+                                                                    Click <a href="https://www.thetalismanrestaurant.com/" target="_blank" rel="noopener" style="color:#a4343a;">here</a> to visit their page.
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </th>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>`;
+
+            case 'header':
+                return `<img src="https://via.placeholder.com/600x200/a4343a/ffffff?text=SBS+BANNER" style="width:100%; display:block;" class="header-img" alt="Banner">`;
+            
+            case 'thin-title':
+                return `<div class="bg-target" style="padding:30px 40px; background:#fff;">
+                    <h2 contenteditable="true" class="txt-align-target styled-content section-title-text" style="margin:0; font-size:22px; color:#222; text-align:left; font-family:'Montserrat',Arial,sans-serif;">Section Title</h2>
+                    <div class="title-line-wrapper" style="text-align:left;">
+                        <div class="section-title-line inner-line red-line" style="display:none; width:60px; height:2px; background:#a4343a; border:none; margin-top:8px; display:inline-block;"></div>
+                    </div>
+                </div>`;
+            
+            case 'text-only':
+                return `<div class="bg-target" style="padding:20px 40px; background:#fff;">
+                    ${titleMarkup}
+                    <div contenteditable="true" class="txt-align-target styled-content" style="font-size:16px; line-height:1.6; color:#333; text-align:left; font-family:'Montserrat',Arial,sans-serif;">Enter your text content here...</div>
+                    ${btnMarkup}
+                </div>`;
+            
+            case 'media-text':
+                return `<div class="bg-target" style="padding:20px 40px; background:#fff;">
+                    <div class="block-title-area mt-title-top" style="display:none; margin-bottom:15px;">
+                        <div class="title-line-wrapper" style="text-align:left;">
+                            <h3 contenteditable="true" class="inner-title styled-content" style="margin:0; font-size:20px; color:#a4343a; font-family:'Montserrat',Arial,sans-serif;">Block Title</h3>
+                            <div class="mt-title-line" style="display:none; width:60px; height:2px; background:#a4343a; margin-top:6px;"></div>
+                        </div>
+                    </div>
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" class="mt-side-layout m-table nsl-inner" style="width:100%; table-layout:fixed; border-collapse:collapse;">
+                        <tr>
+                            <td class="m-media nsl-media-cell" width="50%" valign="top" style="width:50%; vertical-align:top; overflow:hidden; box-sizing:border-box;">
+                                <img src="https://via.placeholder.com/300x200" style="width:100%; max-width:100%; display:block; border-radius:4px;" class="media-img nsl-img" alt="Media">
+                            </td>
+                            <td class="m-text nsl-text-cell" width="50%" valign="top" style="width:50%; padding-left:20px; vertical-align:top; word-wrap:break-word; overflow-wrap:break-word; box-sizing:border-box; overflow:hidden;">
+                                <div class="block-title-area mt-title-text-only" style="display:none; margin-bottom:10px;">
+                                    <div class="title-line-wrapper" style="text-align:left;">
+                                        <h3 contenteditable="true" class="inner-title-text styled-content" style="margin:0; font-size:20px; color:#a4343a; font-family:'Montserrat',Arial,sans-serif;">Block Title</h3>
+                                        <div class="mt-title-line-text" style="display:none; width:60px; height:2px; background:#a4343a; margin-top:6px;"></div>
+                                    </div>
+                                </div>
+                                <div contenteditable="true" class="txt-align-target styled-content" style="font-size:15px; line-height:1.6; color:#333; font-family:'Montserrat',Arial,sans-serif; word-wrap:break-word; overflow-wrap:break-word;">Description text here...</div>
+                                ${btnMarkup}
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="mt-stack-layout" style="display:none; flex-direction:column; width:100%;">
+                        <img src="https://via.placeholder.com/300x200" style="width:100%; display:block; border-radius:4px;" class="mt-stack-img" alt="Media">
+                        <div class="block-title-area mt-title-middle" style="display:none; margin:15px 0 8px 0;">
+                            <div class="title-line-wrapper" style="text-align:left;">
+                                <h3 contenteditable="true" class="inner-title-mid styled-content" style="margin:0; font-size:20px; color:#a4343a; font-family:'Montserrat',Arial,sans-serif;">Block Title</h3>
+                                <div class="mt-title-line-mid" style="display:none; width:60px; height:2px; background:#a4343a; margin-top:6px;"></div>
+                            </div>
+                        </div>
+                        <div class="mt-stack-text styled-content" style="font-size:15px; line-height:1.6; color:#333; padding-top:12px; font-family:'Montserrat',Arial,sans-serif;"></div>
+                        <div class="mt-stack-btn" style="display:none; margin-top:12px; text-align:left;">
+                            <a href="#" class="sbs-btn mt-cta-btn" style="display:inline-block; background:#a4343a; color:#ffffff; padding:12px 30px; border-radius:4px; text-decoration:none; font-weight:700; font-size:14px; cursor:pointer; margin-top:10px;">Click Here</a>
+                        </div>
+                    </div>
+                </div>`;
+
+            case 'events-block':
+                return `<div class="bg-target events-bg" style="padding:30px 40px; background:#fff;">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 class="events-main-title styled-content" contenteditable="true" style="margin:0 0 10px 0; font-size:26px; color:#002147; font-style:italic; font-weight:700; font-family:'Montserrat',Arial,sans-serif;">Upcoming Event(s)</h2>
+                        <div class="events-title-line-wrapper" style="text-align:center;">
+                            <div class="events-title-line" style="display:inline-block; width:60px; height:2px; background:#a4343a; margin:0 auto;"></div>
+                        </div>
+                    </div>
+                    <div class="events-list">${makeEventRow('11','APR','Event Title Here','#')}</div>
+                    <div style="margin-top:12px;">
+                        <button onclick="addEventRow(this)" style="background:#002147; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:12px; width:auto;">+ Add Event</button>
+                    </div>
+                </div>`;
+
+            case 'programmes-block':
+                return `<div class="bg-target programmes-bg" style="padding:30px 40px; background:#f8f9fa; border-top:4px solid #002147; border-bottom:4px solid #a4343a;">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 class="prog-main-title styled-content" contenteditable="true" style="margin:0 0 10px 0; font-size:26px; color:#002147; font-style:italic; font-weight:700; font-family:'Montserrat',Arial,sans-serif;">Upcoming Programmes</h2>
+                        <div class="prog-title-line-wrapper" style="text-align:center;">
+                            <div class="prog-title-line" style="display:inline-block; width:60px; height:2px; background:#a4343a; margin:0 auto;"></div>
+                        </div>
+                    </div>
+                    <div class="programmes-list" style="text-align:center;">
+                        ${makeProgRow('Bachelor of Commerce Programme','#')}
+                        ${makeProgRow('Bachelor of Financial Services','#')}
+                    </div>
+                    <div style="margin-top:12px; text-align:center;">
+                        <button onclick="addProgRow(this)" style="background:#002147; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:12px; width:auto;">+ Add Programme</button>
+                    </div>
+                </div>`;
+            
+            case 'featured-cards':
+                return `<div class="bg-target fc-bg" style="padding:30px 40px; background:#fff;">
+                    <div class="fc-header" style="margin-bottom:20px;">
+                        <h2 class="fc-main-title styled-content" contenteditable="true" style="margin:0 0 8px 0; font-size:26px; color:#002147; font-weight:700; font-style:italic; font-family:'Montserrat',Arial,sans-serif; text-align:left;">Featured Cards</h2>
+                        <div class="fc-title-line-wrapper" style="text-align:left;">
+                            <div class="fc-title-line" style="display:inline-block; width:60px; height:2px; background:#a4343a;"></div>
+                        </div>
+                    </div>
+                    <div class="fc-grid" data-cols="2" style="display:flex; flex-wrap:wrap; gap:20px; width:100%; box-sizing:border-box;">
+                        ${makeFeaturedCard(0)}
+                        ${makeFeaturedCard(1)}
+                    </div>
+                    <div class="fc-add-wrap" style="margin-top:14px;">
+                        <button onclick="addFeaturedCard(this)" style="background:#002147; border:none; color:white; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:12px; width:auto;">+ Add Card</button>
+                        <button onclick="fcSetColumns(2, this)" style="background:#555; border:none; color:white; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:12px; width:auto; margin-left:6px;">2 Cols</button>
+                        <button onclick="fcSetColumns(1, this)" style="background:#555; border:none; color:white; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:12px; width:auto; margin-left:6px;">1 Col</button>
+                        <button onclick="fcSetColumns(3, this)" style="background:#555; border:none; color:white; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:12px; width:auto; margin-left:6px;">3 Cols</button>
+                    </div>
+                </div>`;
+
+            case 'riddle-block':
+                return `<table width="100%" border="0" cellpadding="0" cellspacing="0" class="riddle-bg bg-target"
+                    style="width:100%; table-layout:fixed; border-collapse:collapse; background:#1a1a1a;
+                           background-image:url('https://sbs.strathmore.edu/wp-content/uploads/2022/03/riddler.jpg');
+                           background-size:cover; background-position:center;"
+                    background="https://sbs.strathmore.edu/wp-content/uploads/2022/03/riddler.jpg">
+                    <tr>
+                        <!-- LEFT: headline column (overlays on bg image) -->
+                        <td class="riddle-headline-cell column" width="48%" valign="bottom" align="left"
+                            style="width:48%; vertical-align:bottom; padding:28px 16px 28px 24px;">
+                            <div contenteditable="true" class="riddle-headline styled-content"
+                                style="font-size:38px; font-weight:900; color:#fff; font-family:'Montserrat',Arial,sans-serif;
+                                       line-height:1.1; text-shadow:1px 2px 8px rgba(0,0,0,0.5);">Riddle &amp; Pun</div>
+                        </td>
+                        <!-- RIGHT: white riddle card + red pun card -->
+                        <td class="riddle-right-cell column" width="52%" valign="top" align="left"
+                            style="width:52%; vertical-align:top; padding:20px 20px 20px 12px;">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                                <!-- Riddle card -->
+                                <tr>
+                                    <td class="riddle-card"
+                                        style="background:rgba(255,255,255,0.97); border-radius:4px 4px 0 0;
+                                               padding:16px 18px;">
+                                        <div contenteditable="true" class="riddle-card-label styled-content"
+                                            style="font-size:13px; font-weight:700; color:#111; font-family:'Montserrat',Arial,sans-serif; margin-bottom:6px;">Riddle</div>
+                                        <div contenteditable="true" class="riddle-card-question styled-content"
+                                            style="font-size:14px; color:#222; font-family:'Montserrat',Arial,sans-serif; line-height:1.4; margin-bottom:8px;">I turn once, what is out will not get in. I turn again, what is in will not get out. What am I?</div>
+                                        <div contenteditable="true" class="riddle-card-answer styled-content"
+                                            style="font-size:14px; font-weight:700; color:#111; font-family:'Montserrat',Arial,sans-serif;">Answer: A key</div>
+                                    </td>
+                                </tr>
+                                <tr><td style="height:3px; font-size:0; line-height:0;">&nbsp;</td></tr>
+                                <!-- Pun card -->
+                                <tr>
+                                    <td class="pun-card"
+                                        style="background:#a4343a; border-radius:0 0 4px 4px;
+                                               padding:16px 18px;">
+                                        <div contenteditable="true" class="pun-card-label styled-content"
+                                            style="font-size:13px; font-weight:700; color:#fff; font-family:'Montserrat',Arial,sans-serif; margin-bottom:6px;">Pun</div>
+                                        <div contenteditable="true" class="pun-card-setup styled-content"
+                                            style="font-size:15px; font-weight:700; color:#fff; font-family:'Montserrat',Arial,sans-serif; line-height:1.2; margin-bottom:8px;">I'm reading a book about anti-gravity…</div>
+                                        <div contenteditable="true" class="pun-card-punchline styled-content"
+                                            style="font-size:13px; color:rgba(255,255,255,0.88); font-family:'Montserrat',Arial,sans-serif; font-style:italic; line-height:1.2;">It's impossible to put down!</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- editor-only BG image input row -->
+                    <tr class="riddle-img-input-bar">
+                        <td colspan="2" style="padding:4px 8px; background:rgba(0,0,0,0.5);">
+                            <span style="font-size:10px; color:#ddd;">🖼 BG Image:</span>
+                            <input type="text" class="riddle-bg-url" placeholder="Paste image URL..." oninput="upRiddleBg(this)"
+                                style="font-size:11px; padding:3px 8px; border:1px dashed #ccc; border-radius:3px; color:#333; background:#f9f9f9; width:250px; margin:0 0 0 6px;">
+                        </td>
+                    </tr>
+                </table>`;
+
+            case 'footer-queries':
+                return `<div class="bg-target" style="background:#002147; color:#fff; text-align:center; padding:40px 20px;">
+                    <div style="font-size:22px; font-weight:bold; margin-bottom:15px; color:#fff;">Have any Queries?</div>
+                    <a href="#" class="sbs-btn" style="display:inline-block; background:#a4343a; color:#ffffff; padding:12px 30px; border-radius:4px; text-decoration:none; font-weight:700; font-size:14px;">Get in Touch</a>
+                </div>`;
+            
+            case 'footer-corp':
+                return `<div class="bg-target" style="background:#f9f9f9; color:#444; padding:30px 40px; font-size:12px; border-top:1px solid #ddd;">
+                    <table width="100%" style="width:100%; border-collapse:collapse;"><tr>
+                        <td style="color:#444; font-size:12px;"><b>SBS Contacts</b><br>Madaraka, Nairobi<br>+254 703 034 414</td>
+                        <td align="right" style="text-align:right; color:#444; font-size:12px;"><b>Follow Us</b><br>Website | LinkedIn | Twitter</td>
+                    </tr></table>
+                </div>`;
+        }
+    }
+
+    // ─── EVENT ROW & PROGRAMME ROW HELPERS ───────────────────────────────────
+
+    function makeEventRow(day, month, title, url) {
+        return `<table class="event-row nsl-inner" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+            <tr>
+                <td class="nsl-col" valign="top" style="width:80px; vertical-align:top; padding-right:16px;">
+                    <div style="background:#a4343a; color:#fff; text-align:center; padding:10px 0; font-size:22px; font-style:italic; font-weight:700; font-family:'Montserrat',Arial,sans-serif; min-width:60px; border-radius:2px 2px 0 0;" class="evt-day" contenteditable="true">${day}</div>
+                    <div style="background:#002147; color:#fff; text-align:center; padding:6px 0; font-size:13px; font-weight:700; letter-spacing:1px; font-family:Arial,sans-serif; border-radius:0 0 2px 2px;" class="evt-month" contenteditable="true">${month}</div>
+                </td>
+                <td valign="middle" style="vertical-align:middle;">
+                    <div class="evt-title styled-content" contenteditable="true" style="font-size:16px; font-weight:700; font-style:italic; color:#a4343a; font-family:'Montserrat',Arial,sans-serif; margin-bottom:10px;">${title}</div>
+                    <a href="${url}" class="evt-btn" style="display:inline-block; border:1.5px solid #aaa; color:#333; padding:8px 22px; border-radius:20px; text-decoration:none; font-size:13px; font-family:Arial,sans-serif; cursor:pointer;" contenteditable="false">Learn More</a>
+                    <div class="evt-url-row" style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+                        <input type="text" class="evt-url-input" value="${url}" placeholder="Button URL..." oninput="this.closest('.event-row').querySelector('.evt-btn').href=this.value" style="font-size:11px; padding:5px 8px; border:1px dashed #ccc; border-radius:4px; color:#666; background:#f9f9f9; flex:1; margin:0; height:auto; min-height:0;">
+                    </div>
+                </td>
+                <td valign="middle" style="width:30px; text-align:right; vertical-align:top; padding-top:4px;">
+                    <button class="evt-remove-btn" onclick="this.closest('.event-row').remove()" style="background:none; border:none; color:#ccc; cursor:pointer; font-size:16px; padding:4px; width:auto; min-width:0;" title="Remove event">✕</button>
+                </td>
+            </tr>
+        </table>`;
+    }
+
+    function addEventRow(btn) {
+        const list = btn.closest('.bg-target').querySelector('.events-list');
+        const div = document.createElement('div');
+        div.innerHTML = makeEventRow('01','JAN','New Event Title','#');
+        list.appendChild(div.firstElementChild);
+    }
+
+    function makeProgRow(name, url) {
+        return `<div class="prog-row" style="margin-bottom:10px; font-size:16px; font-weight:700; font-style:italic; color:#002147; font-family:'Montserrat',Arial,sans-serif;">
+            <span class="prog-name" contenteditable="true" style="cursor:text;">${name}</span>
+            <a href="${url}" class="prog-link" style="color:#002147; text-decoration:none; margin-left:8px; cursor:pointer;" contenteditable="false"> &#x2192;</a>
+            <button class="prog-remove-btn" onclick="this.closest('.prog-row').remove()" style="background:none; border:none; color:#ccc; cursor:pointer; font-size:13px; padding:2px 6px; width:auto; min-width:0; margin-left:4px; vertical-align:middle;" title="Remove">✕</button>
+        </div>`;
+    }
+
+    function addProgRow(btn) {
+        const list = btn.closest('.bg-target').querySelector('.programmes-list');
+        const div = document.createElement('div');
+        div.innerHTML = makeProgRow('New Programme Name','#');
+        list.appendChild(div.firstElementChild);
+    }
+
+    // ─── FEATURED CARDS HELPERS ───────────────────────────────────────────────
+
+    function makeFeaturedCard(idx) {
+        const colors = ['#002147','#a4343a'];
+        const color = colors[idx % 2] || '#002147';
+        return `<div class="fc-card" style="flex:1; min-width:200px; box-sizing:border-box; display:flex; flex-direction:column;">
+            <div class="fc-card-img-wrap" style="margin-bottom:12px;">
+                <img class="fc-card-img" src="https://via.placeholder.com/260x180/cccccc/ffffff?text=Image" style="width:100%; display:block; border-radius:4px; object-fit:cover;" alt="Card image">
+                <div class="fc-card-img-input" style="margin-top:4px;">
+                    <input type="text" class="fc-img-url" placeholder="Image URL..." oninput="this.closest('.fc-card').querySelector('.fc-card-img').src=this.value" style="font-size:11px; padding:5px 8px; border:1px dashed #ccc; border-radius:4px; color:#666; background:#f9f9f9; width:100%; box-sizing:border-box; margin:0; height:auto; min-height:0;">
+                </div>
+            </div>
+            <div class="fc-card-title-wrap" style="margin-bottom:8px; display:block;">
+                <div contenteditable="true" class="fc-card-title styled-content" style="font-size:17px; font-weight:700; font-style:italic; color:${color}; font-family:'Montserrat',Arial,sans-serif; line-height:1.3; text-align:left;">Card Title ${idx+1}</div>
+            </div>
+            <div class="fc-card-text-wrap" style="flex:1; margin-bottom:10px; display:block;">
+                <div contenteditable="true" class="fc-card-text styled-content" style="font-size:14px; line-height:1.6; color:#444; font-family:'Montserrat',Arial,sans-serif;">Add your description text here. Keep it concise and engaging.</div>
+            </div>
+            <div class="fc-card-btn-wrap" style="margin-top:auto; display:block; text-align:left;">
+                <div class="fc-btn-toggle-row" style="margin-bottom:6px;">
+                    <button onclick="fcToggleCardBtn(this)" data-btn-visible="true" style="background:none; border:1px dashed #bbb; color:#999; padding:4px 10px; font-size:10px; cursor:pointer; border-radius:3px; width:auto; min-width:0; display:block;">− Hide Button</button>
+                </div>
+                <a href="#" class="fc-card-btn" contenteditable="true" style="display:inline-block; border:1.5px solid #888; color:#333; padding:9px 22px; border-radius:20px; text-decoration:none; font-size:13px; font-family:'Montserrat',Arial,sans-serif; cursor:text; background:transparent;">Read More</a>
+                <div style="margin-top:4px;">
+                    <input type="text" class="fc-btn-url" placeholder="Button URL..." oninput="this.closest('.fc-card').querySelector('.fc-card-btn').href=this.value" style="font-size:11px; padding:5px 8px; border:1px dashed #ccc; border-radius:4px; color:#666; background:#f9f9f9; width:100%; box-sizing:border-box; margin:0; height:auto; min-height:0;">
+                </div>
+            </div>
+            <div class="fc-card-controls" style="margin-top:8px; display:flex; gap:6px; align-items:center; border-top:1px dashed #eee; padding-top:6px; flex-wrap:wrap;">
+                <button onclick="fcMoveCard(this,-1)" style="background:none; border:1px solid #ddd; color:#666; padding:3px 8px; font-size:11px; cursor:pointer; border-radius:3px; width:auto; min-width:0;" title="Move left">◀</button>
+                <button onclick="fcMoveCard(this,1)" style="background:none; border:1px solid #ddd; color:#666; padding:3px 8px; font-size:11px; cursor:pointer; border-radius:3px; width:auto; min-width:0;" title="Move right">▶</button>
+                <button onclick="this.closest('.fc-card').remove(); fcReflow(this)" style="background:none; border:1px solid #fcc; color:#c44; padding:3px 8px; font-size:11px; cursor:pointer; border-radius:3px; width:auto; min-width:0;" title="Remove card">✕</button>
+                <button onclick="fcCardSettings(this.closest('.fc-card'))" style="background:#002147; border:none; color:#fff; padding:3px 10px; font-size:11px; cursor:pointer; border-radius:3px; width:auto; min-width:0;" title="Card Settings">⚙ Settings</button>
+            </div>
+        </div>`;
+    }
+
+    function addFeaturedCard(btn) {
+        const grid = btn.closest('.fc-bg').querySelector('.fc-grid');
+        const count = grid.querySelectorAll('.fc-card').length;
+        const div = document.createElement('div');
+        div.innerHTML = makeFeaturedCard(count);
+        grid.appendChild(div.firstElementChild);
+        // Wrap any new images
+        wrapImagesInBlock(grid.lastElementChild);
+        fcReflowGrid(grid);
+    }
+
+    function fcSetColumns(n, btn) {
+        const grid = btn.closest('.fc-bg').querySelector('.fc-grid');
+        grid.dataset.cols = n;
+        fcReflowGrid(grid);
+    }
+
+    function fcReflowGrid(grid) {
+        const cols = parseInt(grid.dataset.cols) || 2;
+        const cards = grid.querySelectorAll('.fc-card');
+        const pct = cols === 1 ? '100%' : cols === 3 ? 'calc(33.33% - 14px)' : 'calc(50% - 10px)';
+        cards.forEach(c => { c.style.flex = 'none'; c.style.width = pct; c.style.minWidth = '0'; });
+    }
+
+    function fcMoveCard(btn, dir) {
+        const card = btn.closest('.fc-card');
+        const grid = card.closest('.fc-grid');
+        if(dir === -1 && card.previousElementSibling) grid.insertBefore(card, card.previousElementSibling);
+        if(dir === 1 && card.nextElementSibling) grid.insertBefore(card.nextElementSibling, card);
+    }
+
+    function fcReflow(btn) {
+        const grid = btn ? btn.closest('.fc-grid') : null;
+        if(grid) fcReflowGrid(grid);
+    }
+
+    function fcCardSettings(card) {
+        window._activeCard = card;
+        const panel = document.getElementById('dynamicControls');
+        panel.innerHTML = `<h3>Card Settings</h3>
+        <p style="font-size:10px;opacity:0.5;margin:0 0 8px 0;">Editing selected card</p>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Visibility</h3>
+        <label>Show Image</label>
+        <select onchange="fcCardToggle('fc-card-img-wrap',this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+        <label>Show Title</label>
+        <select onchange="fcCardToggle('fc-card-title-wrap',this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+        <label>Show Text</label>
+        <select onchange="fcCardToggle('fc-card-text-wrap',this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+        <label>Show Button</label>
+        <select onchange="fcCardToggle('fc-card-btn-wrap',this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Title Style</h3>
+        <div class="format-row">
+            <div><label>Size</label><input type="number" value="17" oninput="fcCardStyle('fc-card-title','fontSize',this.value+'px')"></div>
+            <div><label>Color</label><input type="color" value="#002147" oninput="fcCardStyle('fc-card-title','color',this.value)" style="height:42px;padding:2px;"></div>
+        </div>
+        <label>Title Alignment</label>
+        <select onchange="fcCardStyle('fc-card-title','textAlign',this.value)">
+            <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+        </select>
+        <div class="format-grid">
+            <button class="text-grid-btn" onclick="fcCardExecCmd('bold')"><b>B</b></button>
+            <button class="text-grid-btn" onclick="fcCardExecCmd('italic')"><i>I</i></button>
+            <button class="text-grid-btn" onclick="fcCardExecCmd('underline')"><u>U</u></button>
+        </div>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Text Style</h3>
+        <div class="format-row">
+            <div><label>Size</label><input type="number" value="14" oninput="fcCardStyle('fc-card-text','fontSize',this.value+'px')"></div>
+            <div><label>Color</label><input type="color" value="#444444" oninput="fcCardStyle('fc-card-text','color',this.value)" style="height:42px;padding:2px;"></div>
+        </div>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Button Style</h3>
+        <label>Button Label</label>
+        <input type="text" placeholder="e.g. Watch Video" value="${(card.querySelector('.fc-card-btn')||{}).textContent||'Read More'}" oninput="fcCardBtnLabel(this.value)">
+        <label>Button Style</label>
+        <select onchange="fcCardBtnStyle(this.value)">
+            <option value="outline">Outline</option>
+            <option value="filled">Filled</option>
+        </select>
+        <label>Button Color</label>
+        <input type="color" value="#888888" oninput="fcCardBtnColor(this.value)" style="height:42px;padding:2px;">
+        <label>Button Alignment</label>
+        <select onchange="fcCardBtnAlign(this.value)">
+            <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+        </select>
+        <label>Button Background Color</label>
+        <input type="color" value="#888888" oninput="fcCardBtnBgColor(this.value)" style="height:42px;padding:2px;">
+        <label>Button Text Color</label>
+        <input type="color" value="#ffffff" oninput="fcCardBtnTextColor(this.value)" style="height:42px;padding:2px;">
+        <label>Button Font Size</label>
+        <input type="number" value="13" oninput="fcCardBtnSize(this.value)">
+        <label>Button Width</label>
+        <select onchange="fcCardBtnWidth(this.value)">
+            <option value="">Auto</option><option value="100%">Full Width</option><option value="80%">80%</option><option value="60%">60%</option>
+        </select>
+        <label>Button Padding (px)</label>
+        <input type="number" value="9" placeholder="Vertical" oninput="fcCardBtnPad('v',this.value)">
+        <input type="number" value="22" placeholder="Horizontal" oninput="fcCardBtnPad('h',this.value)">`;
+    }
+
+    function fcCardToggle(cls, val) { if(!window._activeCard) return; const el = window._activeCard.querySelector('.'+cls); if(el) el.style.display = val; }
+    function fcCardStyle(cls, prop, val) { if(!window._activeCard) return; const el = window._activeCard.querySelector('.'+cls); if(el) el.style[prop] = val; }
+    function fcCardExecCmd(cmd) { if(!window._activeCard) return; const el = window._activeCard.querySelector('.fc-card-title'); if(el) { el.focus(); document.execCommand('selectAll'); document.execCommand(cmd); } }
+    function fcCardBtnLabel(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn) btn.textContent = val; }
+    function fcCardBtnStyle(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(!btn) return; if(val==='filled'){btn.style.background=btn.style.borderColor||'#888';btn.style.color='#fff';}else{btn.style.background='transparent';btn.style.color=btn.style.borderColor||'#333';} }
+    function fcCardBtnColor(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn){btn.style.borderColor=val;btn.style.color=val;} }
+    function fcCardBtnAlign(val) { if(!window._activeCard) return; const wrap = window._activeCard.querySelector('.fc-card-btn-wrap'); if(wrap) wrap.style.textAlign=val; }
+    function fcCardBtnBgColor(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn){btn.style.background=val; btn.style.borderColor=val;} }
+    function fcCardBtnTextColor(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn) btn.style.color=val; }
+    function fcCardBtnWidth(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn){btn.style.width=val; btn.style.boxSizing=val?'border-box':''; btn.style.textAlign=val?'center':'';} }
+    function fcCardBtnSize(val) { if(!window._activeCard) return; const btn = window._activeCard.querySelector('.fc-card-btn'); if(btn) btn.style.fontSize=val+'px'; }
+    function fcCardBtnPad(axis, val) {
+        if(!window._activeCard) return;
+        const btn = window._activeCard.querySelector('.fc-card-btn');
+        if(!btn) return;
+        const parts = btn.style.padding ? btn.style.padding.split(' ') : ['9px','22px'];
+        let v = parts[0]||'9px', h = parts[1]||'22px';
+        if(axis==='v') v=val+'px'; else h=val+'px';
+        btn.style.padding = v+' '+h;
+    }
+
+    function fcToggleCardBtn(toggleBtn) {
+        const card = toggleBtn.closest('.fc-card');
+        const fcBtn = card.querySelector('.fc-card-btn');
+        const fcUrl = card.querySelector('.fc-btn-url');
+        const isVisible = toggleBtn.dataset.btnVisible === 'true';
+        if (isVisible) {
+            if (fcBtn) fcBtn.style.display = 'none';
+            if (fcUrl) fcUrl.closest('div').style.display = 'none';
+            toggleBtn.dataset.btnVisible = 'false';
+            toggleBtn.textContent = '+ Show Button';
+            toggleBtn.style.color = '#a4343a';
+            toggleBtn.style.borderColor = '#a4343a';
+        } else {
+            if (fcBtn) fcBtn.style.display = 'inline-block';
+            if (fcUrl) fcUrl.closest('div').style.display = 'block';
+            toggleBtn.dataset.btnVisible = 'true';
+            toggleBtn.textContent = '− Hide Button';
+            toggleBtn.style.color = '#999';
+            toggleBtn.style.borderColor = '#bbb';
+        }
+    }
+
+    // ─── SIDEBAR CONTROLS ────────────────────────────────────────────────────
+
+    function renderFCControls() {
+        if(!activeElement || activeElement.dataset.type !== 'featured-cards') return;
+        const panel = document.getElementById('dynamicControls');
+        panel.innerHTML = `<h3>Settings: FEATURED CARDS</h3>
+        <label>Background Color</label><input type="color" value="#ffffff" oninput="upBg(this.value)">
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Section Title</h3>
+        <label>Show Title</label>
+        <select onchange="upFcTitleVisibility(this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+        <div class="format-row">
+            <div><label>Size</label><input type="number" value="26" oninput="upFcTitleSize(this.value)"></div>
+            <div><label>Color</label><input type="color" value="#002147" oninput="upFcTitleColor(this.value)" style="height:42px;padding:2px;"></div>
+        </div>
+        <label>Title Alignment</label>
+        <select onchange="upFcTitleAlign(this.value)"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Title Underline</h3>
+        <label>Show Underline</label>
+        <select onchange="upFcLineVisibility(this.value)"><option value="inline-block">Visible</option><option value="none">Hidden</option></select>
+        <label>Color</label><input type="color" value="#a4343a" oninput="upFcLineColor(this.value)" style="height:42px;padding:2px;">
+        <label>Alignment</label>
+        <select onchange="upFcLineAlign(this.value)"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+        <label>Width (%)</label><input type="range" min="0" max="100" value="10" oninput="upFcLineWidth(this.value + '%')">
+        <label>Thickness (px)</label><input type="range" min="1" max="10" value="2" oninput="upFcLineThickness(this.value + 'px')">
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Card Grid Layout</h3>
+        <label>Columns</label>
+        <select onchange="upFcCols(this.value)"><option value="2">2 Columns</option><option value="1">1 Column (Full Width)</option><option value="3">3 Columns</option></select>
+        <label>Card Gap (px)</label><input type="range" min="0" max="40" value="20" oninput="upFcGap(this.value)">
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <p style="font-size:10px;opacity:0.6;margin:0;">Click ⚙ Settings on any card to edit it individually.</p>`;
+    }
+
+    function upFcTitleVisibility(v) { if(!activeElement) return; const el=activeElement.querySelector('.fc-main-title'); if(el) el.style.display=v; }
+    function upFcLineVisibility(v) { if(!activeElement) return; const el=activeElement.querySelector('.fc-title-line'); if(el) el.style.display=v; }
+    function upFcLineWidth(w) { if(!activeElement) return; const el=activeElement.querySelector('.fc-title-line'); if(el) el.style.width=w; }
+    function upFcLineThickness(h) { if(!activeElement) return; const el=activeElement.querySelector('.fc-title-line'); if(el) el.style.height=h; }
+    function upFcTitleSize(px) { if(!activeElement) return; const el=activeElement.querySelector('.fc-main-title'); if(el) el.style.fontSize=px+'px'; }
+    function upFcTitleColor(c) { if(!activeElement) return; const el=activeElement.querySelector('.fc-main-title'); if(el) el.style.color=c; }
+    function upFcLineColor(c) { if(!activeElement) return; const el=activeElement.querySelector('.fc-title-line'); if(el) el.style.background=c; }
+    function upFcLineAlign(val) { if(!activeElement) return; const w=activeElement.querySelector('.fc-title-line-wrapper'); if(w) w.style.textAlign=val; }
+    function upFcTitleAlign(val) { if(!activeElement) return; const el=activeElement.querySelector('.fc-main-title'); if(el){el.style.textAlign=val;} const w=activeElement.querySelector('.fc-title-line-wrapper'); if(w) w.style.textAlign=val; }
+    function upFcCols(n) { if(!activeElement) return; const grid=activeElement.querySelector('.fc-grid'); if(grid){grid.dataset.cols=n;fcReflowGrid(grid);} }
+    function upFcGap(px) { if(!activeElement) return; const grid=activeElement.querySelector('.fc-grid'); if(grid) grid.style.gap=px+'px'; }
+
+    function renderControls(type) {
+        if (!type) {
+            document.getElementById('dynamicControls').innerHTML = '<h3>Settings</h3><p style="font-size:10px; opacity:0.5;">Select a block.</p>';
+            return;
+        }
+        const panel = document.getElementById('dynamicControls');
+        let h = `<h3>Settings: ${type.replace(/-/g,' ').toUpperCase()}</h3>`;
+        
+        if(type === 'lets-go-out') {
+            h += `
+            <label>Section Title</label>
+            <input type="text" placeholder="e.g. Let's Go Out!" oninput="if(activeElement){const el=activeElement.querySelector('.lgo-title');if(el)el.innerHTML=this.value.replace(/\\n/g,'<br>')}">
+            <label>Title Color</label>
+            <input type="color" value="#a4343a" oninput="if(activeElement){const el=activeElement.querySelector('.lgo-title');if(el)el.style.color=this.value}" style="height:42px;padding:2px;">
+            <label>Underline Color</label>
+            <input type="color" value="#ffce01" oninput="if(activeElement){const el=activeElement.querySelector('.lgo-title');if(el)el.style.borderBottomColor=this.value}" style="height:42px;padding:2px;">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Content Card</h3>
+            <label>Place Name</label>
+            <input type="text" placeholder="e.g. The Talisman Restaurant" oninput="if(activeElement){const el=activeElement.querySelector('.lgo-place-name');if(el)el.textContent=this.value}">
+            <label>Place Name Color</label>
+            <input type="color" value="#a4343a" oninput="if(activeElement){const el=activeElement.querySelector('.lgo-place-name');if(el)el.style.color=this.value}" style="height:42px;padding:2px;">
+            <label>Background Pattern</label>
+            <select onchange="lgoSetBg(this.value)">
+                <option value="https://sbs.strathmore.edu/wp-content/uploads/2023/03/strathmore-log-pattern.png">Small Pattern</option>
+                <option value="https://sbs.strathmore.edu/wp-content/uploads/2023/03/strathmore-log-pattern-small.png">Large Pattern</option>
+                <option value="">None (Plain)</option>
+            </select>
+            <label>Card Background Color</label>
+            <input type="color" value="#eeeeee" oninput="if(activeElement){activeElement.querySelectorAll('.lgo-header-table,.lgo-card-table').forEach(t=>t.style.backgroundColor=this.value)}" style="height:42px;padding:2px;">`;
+            panel.innerHTML = h;
+            return;
+        }
+
+        if(type === 'header') {
+            h += `<label>Banner Image URL</label>
+            <input type="text" placeholder="Paste image link..." id="headerUrlInput" oninput="updateHeaderImg(this.value)">
+            <img id="headerImgPreview" class="img-preview" alt="Header preview">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <p style="font-size:10px; color:#aaa; margin:0;">💡 Click the banner image on the canvas to resize it with drag handles and add a link.</p>`;
+        } else if(type !== 'events-block' && type !== 'programmes-block') {
+            h += `<label>Background Color</label><input type="color" value="#ffffff" oninput="upBg(this.value)">`;
+            h += `<label>Content Align</label><select onchange="upTextAlign(this.value)">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option></select>`;
+        }
+
+        if(type === 'media-text') {
+            h += `<label>Image URL</label>
+            <input type="text" id="mediaUrlInput" placeholder="Paste image link..." oninput="updateMediaImg(this.value)">
+            <img id="mediaImgPreview" class="img-preview" alt="Media preview">`;
+            h += `<label>Layout Mode</label>
+            <select id="layoutModeSelect" onchange="upMediaLayout(this.value)">
+                <option value="side">Side by Side</option>
+                <option value="stack">Vertical</option>
+            </select>`;
+            h += `<label>Image Ratio (%) — Side by Side only</label>
+            <input type="range" min="20" max="80" value="50" oninput="upMediaRatio(this.value)">`;
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <p style="font-size:10px; color:#aaa; margin:0;">💡 Click any image on the canvas to resize it with drag handles and set a link.</p>`;
+        }
+
+        if(type === 'thin-title') {
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Title</h3>
+            <label>Show Title Text</label>
+            <select onchange="upSectionTitleVisibility(this.value)"><option value="block">Visible</option><option value="none">Hidden</option></select>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Underline</h3>
+            <label>Show Underline</label>
+            <select onchange="upSectionTitleLine(this.value)"><option value="none">Hidden</option><option value="block">Visible</option></select>
+            <label>Underline Alignment</label>
+            <select onchange="upLineAlign(this.value, '.section-title-line')"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+            <label>Underline Width (%)</label>
+            <input type="range" min="0" max="100" value="100" oninput="upLine('width', this.value + '%')">
+            <label>Underline Thickness (px)</label>
+            <input type="range" min="1" max="10" value="2" oninput="upLine('height', this.value + 'px')">
+            <label>Underline Color</label>
+            <input type="color" value="#a4343a" oninput="upLine('background', this.value)" style="height:42px; padding:2px;">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Per-Block Text Format</h3>
+            <div class="format-grid">
+                <button class="text-grid-btn" onclick="doStyleOnTarget('bold')"><b>B</b></button>
+                <button class="text-grid-btn" onclick="doStyleOnTarget('italic')"><i>I</i></button>
+                <button class="text-grid-btn" onclick="doStyleOnTarget('underline')"><u>U</u></button>
+            </div>
+            <div class="format-row">
+                <div><label>Font Size</label><input type="number" value="22" oninput="setTargetFontSize(this.value)"></div>
+                <div><label>Text Color</label><input type="color" value="#222222" oninput="setTargetColor(this.value)" style="height:42px; padding:2px;"></div>
+            </div>`;
+        }
+
+        if(type === 'text-only' || type === 'media-text') {
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Block Title</h3>
+            <label>Block Title Visibility</label>
+            <select onchange="upToggleTitle(this.value)"><option value="none">Hidden</option><option value="block">Visible</option></select>`;
+
+            if(type === 'media-text') {
+                h += `<label>Title Position</label>
+                <select id="titlePosSelect" onchange="upMtTitlePosition(this.value)">
+                    <option value="top">Top (Above Media &amp; Text)</option>
+                    <option value="text-only">Above Text Only</option>
+                    <option value="middle">Between Media &amp; Text (Vertical only)</option>
+                </select>`;
+            }
+
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Block Title Style</h3>
+            <div class="format-row">
+                <div><label>Title Size</label><input type="number" value="20" oninput="upMtTitleSize(this.value)"></div>
+                <div><label>Title Color</label><input type="color" value="#a4343a" oninput="upMtTitleColor(this.value)" style="height:42px; padding:2px;"></div>
+            </div>
+            <label>Show Title Underline</label>
+            <select onchange="upMtTitleLine(this.value)"><option value="none">Hidden</option><option value="block">Visible</option></select>
+            <label>Title Alignment</label>
+            <select onchange="upMtTitleTextAlign(this.value)"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+            <label>Underline Alignment</label>
+            <select onchange="upMtTitleLineAlign(this.value)"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+            <label>Underline Width (%)</label>
+            <input type="range" min="0" max="100" value="100" oninput="upMtTitleLineWidth(this.value + '%')">
+            <label>Underline Thickness (px)</label>
+            <input type="range" min="1" max="10" value="2" oninput="upMtTitleLineHeight(this.value + 'px')">
+            <label>Underline Color</label>
+            <input type="color" value="#a4343a" oninput="upMtTitleLineColor(this.value)" style="height:42px; padding:2px;">`;
+
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Per-Block Text Format</h3>
+            <div class="format-grid">
+                <button class="text-grid-btn" onclick="doStyleOnTarget('bold')"><b>B</b></button>
+                <button class="text-grid-btn" onclick="doStyleOnTarget('italic')"><i>I</i></button>
+                <button class="text-grid-btn" onclick="doStyleOnTarget('underline')"><u>U</u></button>
+            </div>
+            <div class="format-row">
+                <div><label>Font Size</label><input type="number" value="16" oninput="setTargetFontSize(this.value)"></div>
+                <div><label>Text Color</label><input type="color" value="#333333" oninput="setTargetColor(this.value)" style="height:42px; padding:2px;"></div>
+            </div>`;
+
+            h += `<hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Call-to-Action Button</h3>
+            <div class="btn-settings-box">
+                <label>Show Button</label>
+                <select onchange="upToggleBtn(this.value)"><option value="none">Hidden</option><option value="block">Visible</option></select>
+                <label>Button Label</label>
+                <input type="text" placeholder="e.g. Read More" oninput="upBtnLabel(this.value)">
+                <label>Button URL</label>
+                <input type="text" placeholder="https://..." oninput="upBtnUrl(this.value)">
+                <label>Button Background Color</label>
+                <input type="color" value="#a4343a" oninput="upBtnColor(this.value)" style="height:42px; padding:2px;">
+                <label>Button Text Color</label>
+                <input type="color" value="#ffffff" oninput="upBtnTextColor(this.value)" style="height:42px; padding:2px;">
+                <label>Button Alignment</label>
+                <select onchange="upBtnAlign(this.value)"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+                <label>Button Position</label>
+                <select onchange="upBtnPosition(this.value)"><option value="below-text">Below Text</option><option value="above-text">Above Text</option><option value="below-media">Below Media</option></select>
+            </div>`;
+        }
+
+        if(type === 'featured-cards') { renderFCControls(); return; }
+        if(type === 'riddle-block') { renderRiddleControls(); return; }
+
+        if(type === 'events-block') {
+            h += `<label>Background Color</label><input type="color" value="#ffffff" oninput="upBg(this.value)">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Section Title Style</h3>
+            <div class="format-row">
+                <div><label>Title Size</label><input type="number" value="26" oninput="upEventsTitleSize(this.value)"></div>
+                <div><label>Title Color</label><input type="color" value="#002147" oninput="upEventsTitleColor(this.value)" style="height:42px; padding:2px;"></div>
+            </div>
+            <label>Title Underline Color</label>
+            <input type="color" value="#a4343a" oninput="upEventsTitleLineColor(this.value)" style="height:42px; padding:2px;">
+            <label>Title Underline Alignment</label>
+            <select onchange="upEventsTitleLineAlign(this.value)"><option value="center">Center</option><option value="left">Left</option><option value="right">Right</option></select>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Event Cards Style</h3>
+            <label>Day Number Color</label>
+            <input type="color" value="#a4343a" oninput="upEventsCardColor(this.value, 'day')" style="height:42px; padding:2px;">
+            <label>Month Tag Color</label>
+            <input type="color" value="#002147" oninput="upEventsCardColor(this.value, 'month')" style="height:42px; padding:2px;">
+            <label>Event Title Color</label>
+            <input type="color" value="#a4343a" oninput="upEventsCardColor(this.value, 'title')" style="height:42px; padding:2px;">
+            <label>Button Style</label>
+            <select onchange="upEventsLearnMoreStyle(this.value)"><option value="outline">Outline (default)</option><option value="filled">Filled</option></select>
+            <label>Button Color</label>
+            <input type="color" value="#888888" oninput="upEventsLearnMoreColor(this.value)" style="height:42px; padding:2px;">`;
+        }
+
+        if(type === 'programmes-block') {
+            h += `<label>Background Color</label><input type="color" value="#f8f9fa" oninput="upBg(this.value)">
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Section Title Style</h3>
+            <div class="format-row">
+                <div><label>Title Size</label><input type="number" value="26" oninput="upProgTitleSize(this.value)"></div>
+                <div><label>Title Color</label><input type="color" value="#002147" oninput="upProgTitleColor(this.value)" style="height:42px; padding:2px;"></div>
+            </div>
+            <label>Title Underline Color</label>
+            <input type="color" value="#a4343a" oninput="upProgTitleLineColor(this.value)" style="height:42px; padding:2px;">
+            <label>Title Underline Alignment</label>
+            <select onchange="upProgTitleLineAlign(this.value)"><option value="center">Center</option><option value="left">Left</option><option value="right">Right</option></select>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Programme List Style</h3>
+            <label>Programme Name Color</label>
+            <input type="color" value="#002147" oninput="upProgNameColor(this.value)" style="height:42px; padding:2px;">
+            <label>Programme Name Size</label>
+            <input type="number" value="16" oninput="upProgNameSize(this.value)">
+            <label>Arrow Color</label>
+            <input type="color" value="#002147" oninput="upProgArrowColor(this.value)" style="height:42px; padding:2px;">
+            <label>List Alignment</label>
+            <select onchange="upProgListAlign(this.value)"><option value="center">Center</option><option value="left">Left</option><option value="right">Right</option></select>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <h3>Programme Links</h3>
+            <label>Programme URLs (one per line, in order)</label>
+            <textarea id="progUrlsInput" rows="5" style="width:100%; background:var(--input-bg); color:var(--text-main); border:1px solid #333; border-radius:6px; padding:8px; font-size:12px; box-sizing:border-box; resize:vertical;" placeholder="https://sbs.example.com/programme1&#10;https://sbs.example.com/programme2" oninput="upProgUrls(this.value)"></textarea>`;
+        }
+        
+        panel.innerHTML = h;
+    }
+
+    // ─── UPDATE HELPERS ───────────────────────────────────────────────────────
+
+    function upBg(v) { if(!activeElement) return; const t=activeElement.querySelector('.bg-target'); if(t){t.style.backgroundColor=v; t.style.background=v; t.setAttribute('data-bg',v);} }
+    function lgoSetBg(url) {
+        if(!activeElement) return;
+        activeElement.querySelectorAll('.lgo-header-table, .lgo-card-table').forEach(t => {
+            t.style.backgroundImage = url ? `url('${url}')` : 'none';
+        });
+    }
+    function upTextAlign(v) { if(activeElement) activeElement.querySelectorAll('.txt-align-target, .mt-stack-text').forEach(el => el.style.textAlign = v); }
+    function upLine(prop, val) { if(activeElement) { const line = activeElement.querySelector('.inner-line'); if(line) line.style[prop] = val; } }
+
+    function upMediaLayout(v) {
+        const sideLayout  = activeElement.querySelector('.mt-side-layout');
+        const stackLayout = activeElement.querySelector('.mt-stack-layout');
+        if(!sideLayout || !stackLayout) return;
+        if(v === 'stack') {
+            sideLayout.style.display  = 'none';
+            stackLayout.style.display = 'flex';
+            const srcImg = activeElement.querySelector('.media-img');
+            const stackImg = activeElement.querySelector('.mt-stack-img');
+            if(srcImg && stackImg) stackImg.src = srcImg.src;
+            _syncTextToStack();
+        } else {
+            sideLayout.style.display  = '';
+            stackLayout.style.display = 'none';
+            const midTitle = activeElement.querySelector('.mt-title-middle');
+            if(midTitle) midTitle.style.display = 'none';
+        }
+    }
+
+    function _syncTextToStack() {
+        const txtSide  = activeElement.querySelector('.txt-align-target');
+        const txtStack = activeElement.querySelector('.mt-stack-text');
+        if(txtSide && txtStack) txtStack.innerHTML = txtSide.innerHTML;
+    }
+
+    function upMediaRatio(v) {
+        const media = activeElement.querySelector('.m-media');
+        const text  = activeElement.querySelector('.m-text');
+        if(media && text) { media.width = v + "%"; text.width = (100 - v) + "%"; }
+    }
+
+    function updateHeaderImg(val) {
+        const wrapper = activeElement ? activeElement.querySelector('.img-resize-wrapper') : null;
+        const img = wrapper ? wrapper.querySelector('img') : (activeElement ? activeElement.querySelector('.header-img') : null);
+        if(img) img.src = val;
+        const preview = document.getElementById('headerImgPreview');
+        if(preview) { preview.src = val; preview.style.display = val ? 'block' : 'none'; }
+    }
+
+    function updateMediaImg(val) {
+        if(activeElement) activeElement.querySelectorAll('.media-img, .mt-stack-img').forEach(img => img.src = val);
+        const preview = document.getElementById('mediaImgPreview');
+        if(preview) { preview.src = val; preview.style.display = val ? 'block' : 'none'; }
+    }
+
+    function upToggleTitle(v) {
+        if(!activeElement) return;
+        const type = activeElement.dataset.type;
+        if(type === 'media-text') {
+            const posSelect = document.getElementById('titlePosSelect');
+            const pos = posSelect ? posSelect.value : 'top';
+            if(pos === 'middle') {
+                const mid = activeElement.querySelector('.mt-title-middle');
+                if(mid) {
+                    const stackLayout = activeElement.querySelector('.mt-stack-layout');
+                    const isStack = stackLayout && stackLayout.style.display === 'flex';
+                    if(!isStack && v === 'block') alert('ℹ️ "Between Media & Text" is only visible when Layout Mode is Vertical.');
+                    mid.style.display = v;
+                }
+                activeElement.querySelectorAll('.mt-title-top, .mt-title-text-only').forEach(el => el.style.display = 'none');
+            } else if(pos === 'text-only') {
+                const textOnly = activeElement.querySelector('.mt-title-text-only');
+                if(textOnly) textOnly.style.display = v;
+                activeElement.querySelectorAll('.mt-title-top, .mt-title-middle').forEach(el => el.style.display = 'none');
+            } else {
+                const top = activeElement.querySelector('.mt-title-top');
+                if(top) top.style.display = v;
+                activeElement.querySelectorAll('.mt-title-middle, .mt-title-text-only').forEach(el => el.style.display = 'none');
+            }
+        } else {
+            const area = activeElement.querySelector('.block-title-area');
+            if(area) area.style.display = v;
+        }
+    }
+
+    function upMtTitlePosition(val) {
+        if(!activeElement) return;
+        const top = activeElement.querySelector('.mt-title-top');
+        const mid = activeElement.querySelector('.mt-title-middle');
+        const textOnly = activeElement.querySelector('.mt-title-text-only');
+        if(!top || !mid) return;
+
+        // Sync title text across all title areas
+        const srcH3 = top.querySelector('.inner-title') || mid.querySelector('.inner-title-mid') || (textOnly && textOnly.querySelector('.inner-title-text'));
+        const srcText = srcH3 ? srcH3.innerHTML : 'Block Title';
+        if(top.querySelector('.inner-title')) top.querySelector('.inner-title').innerHTML = srcText;
+        if(mid.querySelector('.inner-title-mid')) mid.querySelector('.inner-title-mid').innerHTML = srcText;
+        if(textOnly && textOnly.querySelector('.inner-title-text')) textOnly.querySelector('.inner-title-text').innerHTML = srcText;
+
+        const wasVisible = top.style.display === 'block' || mid.style.display === 'block' || (textOnly && textOnly.style.display === 'block');
+        top.style.display = 'none';
+        mid.style.display = 'none';
+        if(textOnly) textOnly.style.display = 'none';
+
+        if(val === 'middle') {
+            const stackLayout = activeElement.querySelector('.mt-stack-layout');
+            const isStack = stackLayout && stackLayout.style.display === 'flex';
+            if(!isStack) alert('ℹ️ "Between Media & Text" position is only visible when Layout Mode is Vertical.');
+            if(wasVisible) mid.style.display = 'block';
+        } else if(val === 'text-only') {
+            if(wasVisible && textOnly) textOnly.style.display = 'block';
+        } else {
+            if(wasVisible) top.style.display = 'block';
+        }
+    }
+
+    function upMtTitleSize(px) { if(activeElement) activeElement.querySelectorAll('.inner-title, .inner-title-mid, .inner-title-text, .block-title-area h3').forEach(el => el.style.fontSize = px + 'px'); }
+    function upMtTitleColor(color) { if(activeElement) activeElement.querySelectorAll('.inner-title, .inner-title-mid, .inner-title-text, .block-title-area h3').forEach(el => el.style.color = color); }
+    function upMtTitleLine(v) { if(activeElement) activeElement.querySelectorAll('.mt-title-line, .mt-title-line-mid, .mt-title-line-text').forEach(el => el.style.display = v); }
+    function upMtTitleLineWidth(w) { if(activeElement) activeElement.querySelectorAll('.mt-title-line, .mt-title-line-mid, .mt-title-line-text').forEach(el => el.style.width = w); }
+    function upMtTitleLineHeight(hv) { if(activeElement) activeElement.querySelectorAll('.mt-title-line, .mt-title-line-mid, .mt-title-line-text').forEach(el => el.style.height = hv); }
+    function upMtTitleLineColor(c) { if(activeElement) activeElement.querySelectorAll('.mt-title-line, .mt-title-line-mid, .mt-title-line-text').forEach(el => el.style.background = c); }
+    function upSectionTitleLine(v) { if(activeElement) { const line = activeElement.querySelector('.section-title-line'); if(line) line.style.display = v === 'block' ? 'inline-block' : 'none'; } }
+    function upSectionTitleVisibility(v) { if(activeElement) { const title = activeElement.querySelector('.section-title-text'); if(title) title.style.display = v; } }
+    function doStyleOnTarget(cmd) { if (!activeElement) return; const target = activeElement.querySelector('.txt-align-target'); if (target) { target.focus(); document.execCommand('selectAll'); document.execCommand(cmd, false, null); } }
+    function setTargetFontSize(px) { if(!activeElement) return; activeElement.querySelectorAll('.txt-align-target, .mt-stack-text').forEach(el => el.style.fontSize = px + 'px'); }
+    function setTargetColor(color) { if(!activeElement) return; activeElement.querySelectorAll('.txt-align-target, .mt-stack-text').forEach(el => el.style.color = color); }
+    function upToggleBtn(v) { if(!activeElement) return; const sideBtn = activeElement.querySelector('.btn-area'); const stackBtn = activeElement.querySelector('.mt-stack-btn'); if(sideBtn) sideBtn.style.display = v; if(stackBtn) stackBtn.style.display = v; }
+    function upBtnLabel(val) { if(activeElement) activeElement.querySelectorAll('.block-cta-btn, .mt-cta-btn').forEach(b => b.textContent = val); }
+    function upBtnUrl(val) { if(activeElement) activeElement.querySelectorAll('.block-cta-btn, .mt-cta-btn').forEach(b => b.href = val); }
+    function upBtnColor(val) { if(activeElement) activeElement.querySelectorAll('.block-cta-btn, .mt-cta-btn').forEach(b => b.style.background = val); }
+    function upBtnTextColor(val) { if(activeElement) activeElement.querySelectorAll('.block-cta-btn, .mt-cta-btn').forEach(b => b.style.color = val); }
+    function upBtnAlign(val) { if(!activeElement) return; const sideBtn = activeElement.querySelector('.btn-area'); const stackBtn = activeElement.querySelector('.mt-stack-btn'); if(sideBtn) sideBtn.style.textAlign = val; if(stackBtn) stackBtn.style.textAlign = val; }
+    function upBtnPosition(val) {
+        if(!activeElement) return;
+        const btnArea = activeElement.querySelector('.btn-area');
+        const textEl = activeElement.querySelector('.txt-align-target');
+        const mediaCell = activeElement.querySelector('.m-media');
+        if(!btnArea) return;
+        if(val === 'above-text' && textEl) textEl.parentNode.insertBefore(btnArea, textEl);
+        else if(val === 'below-text' && textEl) textEl.parentNode.insertBefore(btnArea, textEl.nextSibling);
+        else if(val === 'below-media' && mediaCell) mediaCell.appendChild(btnArea);
+    }
+
+    function upLineAlign(val, selector) {
+        if(!activeElement) return;
+        const wrapper = activeElement.querySelector('.title-line-wrapper');
+        if(wrapper) wrapper.style.textAlign = val;
+        const line = activeElement.querySelector(selector || '.inner-line');
+        if(line) {
+            if(val === 'left')   { line.style.marginLeft='0'; line.style.marginRight='auto'; }
+            if(val === 'center') { line.style.marginLeft='auto'; line.style.marginRight='auto'; }
+            if(val === 'right')  { line.style.marginLeft='auto'; line.style.marginRight='0'; }
+            line.style.display = 'inline-block';
+        }
+    }
+
+    function upMtTitleTextAlign(val) {
+        if(!activeElement) return;
+        // h3 titles use display:inline inside a wrapper div — set alignment on wrapper
+        activeElement.querySelectorAll('.title-line-wrapper,.mt-title-line-wrap,.block-title-area').forEach(w => { w.style.textAlign = val; });
+        // Also set on the h3s in case display changes
+        activeElement.querySelectorAll('.inner-title,.inner-title-mid,.inner-title-text').forEach(el => { el.style.display='block'; el.style.textAlign = val; });
+    }
+    function upMtTitleLineAlign(val) {
+        if(!activeElement) return;
+        activeElement.querySelectorAll('.mt-title-line, .mt-title-line-mid, .mt-title-line-text').forEach(line => {
+            const wrapper = line.parentElement;
+            if(wrapper) wrapper.style.textAlign = val;
+            if(val === 'left')   { line.style.marginLeft='0'; line.style.marginRight='auto'; }
+            if(val === 'center') { line.style.marginLeft='auto'; line.style.marginRight='auto'; }
+            if(val === 'right')  { line.style.marginLeft='auto'; line.style.marginRight='0'; }
+            line.style.display = 'inline-block';
+        });
+    }
+
+    // ─── EVENTS / PROGRAMMES HELPERS ─────────────────────────────────────────
+    function upEventsTitleSize(px) { if(!activeElement) return; const el = activeElement.querySelector('.events-main-title'); if(el) el.style.fontSize = px + 'px'; }
+    function upEventsTitleColor(c) { if(!activeElement) return; const el = activeElement.querySelector('.events-main-title'); if(el) el.style.color = c; }
+    function upEventsTitleLineColor(c) { if(!activeElement) return; const el = activeElement.querySelector('.events-title-line'); if(el) el.style.background = c; }
+    function upEventsTitleLineAlign(val) { if(!activeElement) return; const wrapper = activeElement.querySelector('.events-title-line-wrapper'); if(wrapper) wrapper.style.textAlign = val; }
+    function upEventsCardColor(c, part) {
+        if(!activeElement) return;
+        if(part==='day') activeElement.querySelectorAll('.evt-day').forEach(el=>el.style.background=c);
+        if(part==='month') activeElement.querySelectorAll('.evt-month').forEach(el=>el.style.background=c);
+        if(part==='title') activeElement.querySelectorAll('.evt-title').forEach(el=>el.style.color=c);
+    }
+    function upEventsLearnMoreStyle(val) {
+        if(!activeElement) return;
+        activeElement.querySelectorAll('.evt-btn').forEach(btn => {
+            if(val==='filled'){btn.style.background=btn.style.borderColor||'#888';btn.style.color='#fff';}
+            else{btn.style.background='transparent';btn.style.color='#333';}
+        });
+    }
+    function upEventsLearnMoreColor(c) { if(!activeElement) return; activeElement.querySelectorAll('.evt-btn').forEach(btn=>{btn.style.borderColor=c;btn.style.color=c;}); }
+    function upProgTitleSize(px) { if(!activeElement) return; const el=activeElement.querySelector('.prog-main-title'); if(el) el.style.fontSize=px+'px'; }
+    function upProgTitleColor(c) { if(!activeElement) return; const el=activeElement.querySelector('.prog-main-title'); if(el) el.style.color=c; }
+    function upProgTitleLineColor(c) { if(!activeElement) return; const el=activeElement.querySelector('.prog-title-line'); if(el) el.style.background=c; }
+    function upProgTitleLineAlign(val) { if(!activeElement) return; const wrapper=activeElement.querySelector('.prog-title-line-wrapper'); if(wrapper) wrapper.style.textAlign=val; }
+    function upProgNameColor(c) { if(!activeElement) return; activeElement.querySelectorAll('.prog-name').forEach(el=>el.style.color=c); }
+    function upProgNameSize(px) { if(!activeElement) return; activeElement.querySelectorAll('.prog-row').forEach(el=>el.style.fontSize=px+'px'); }
+    function upProgArrowColor(c) { if(!activeElement) return; activeElement.querySelectorAll('.prog-link').forEach(el=>el.style.color=c); }
+    function upProgListAlign(val) { if(!activeElement) return; const list=activeElement.querySelector('.programmes-list'); if(list) list.style.textAlign=val; }
+    function upProgUrls(val) {
+        if(!activeElement) return;
+        const urls = val.split('\n').map(u=>u.trim()).filter(Boolean);
+        const rows = activeElement.querySelectorAll('.prog-row');
+        rows.forEach((row,i) => { const link = row.querySelector('.prog-link'); if(link && urls[i]) link.href=urls[i]; });
+    }
+
+    // ─── RIDDLE HELPERS ───────────────────────────────────────────────────────
+    function upRiddleBg(input) {
+        const tbl = input.closest('.riddle-bg');
+        if (!tbl) return;
+        tbl.style.backgroundImage = `url('${input.value}')`;
+        tbl.setAttribute('background', input.value);
+    }
+
+    function renderRiddleControls() {
+        if(!activeElement) return;
+        const panel = document.getElementById('dynamicControls');
+        panel.innerHTML = `<h3>Settings: RIDDLE &amp; PUN</h3>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Background Image</h3>
+        <label>Image URL</label>
+        <input type="text" placeholder="Paste image URL..." id="riddleBgUrlInput" oninput="upRiddleBgFromSidebar(this.value)">
+        <img id="riddleBgPreview" class="img-preview" alt="BG preview">
+        <label>Image Position</label>
+        <select onchange="upRiddleBgPos(this.value)">
+            <option value="center">Center</option><option value="top">Top</option>
+            <option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option>
+        </select>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Headline (on image)</h3>
+        <div class="format-row">
+            <div><label>Size</label><input type="number" value="38" oninput="upRiddleHeadlineSize(this.value)"></div>
+            <div><label>Color</label><input type="color" value="#ffffff" oninput="upRiddleHeadlineColor(this.value)" style="height:42px;padding:2px;"></div>
+        </div>
+        <label>Left Column Width (%)</label><input type="range" min="30" max="70" value="48" oninput="upRiddleImageWidth(this.value)">
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Riddle Card</h3>
+        <label>Card Background</label><input type="color" value="#ffffff" oninput="upRiddleCardBg('.riddle-card',this.value)" style="height:42px;padding:2px;">
+        <label>Label Color</label><input type="color" value="#111111" oninput="upRiddleCardTextColor('.riddle-card-label',this.value)" style="height:42px;padding:2px;">
+        <label>Question Color</label><input type="color" value="#222222" oninput="upRiddleCardTextColor('.riddle-card-question',this.value)" style="height:42px;padding:2px;">
+        <label>Answer Color</label><input type="color" value="#111111" oninput="upRiddleCardTextColor('.riddle-card-answer',this.value)" style="height:42px;padding:2px;">
+        <hr style="border-color:rgba(255,255,255,0.1); margin:8px 0;">
+        <h3>Pun Card</h3>
+        <label>Card Background</label><input type="color" value="#a4343a" oninput="upRiddleCardBg('.pun-card',this.value)" style="height:42px;padding:2px;">
+        <label>Label Color</label><input type="color" value="#ffffff" oninput="upRiddleCardTextColor('.pun-card-label',this.value)" style="height:42px;padding:2px;">
+        <label>Setup Color</label><input type="color" value="#ffffff" oninput="upRiddleCardTextColor('.pun-card-setup',this.value)" style="height:42px;padding:2px;">
+        <label>Punchline Color</label><input type="color" value="#ffffff" oninput="upRiddleCardTextColor('.pun-card-punchline',this.value)" style="height:42px;padding:2px;">
+        <label>Setup Font Size</label><input type="number" value="15" oninput="upRiddleCardTextSize('.pun-card-setup',this.value)">
+        <label>Punchline Font Size</label><input type="number" value="13" oninput="upRiddleCardTextSize('.pun-card-punchline',this.value)">`;
+    }
+
+    function upRiddleBgFromSidebar(val) {
+        if(!activeElement) return;
+        const tbl = activeElement.querySelector('.riddle-bg');
+        if (tbl) { tbl.style.backgroundImage = `url('${val}')`; tbl.setAttribute('background', val); }
+        const inlineInput = activeElement.querySelector('.riddle-bg-url');
+        if(inlineInput) inlineInput.value = val;
+        const preview = document.getElementById('riddleBgPreview');
+        if(preview) { preview.src = val; preview.style.display = val ? 'block' : 'none'; }
+    }
+    function upRiddleBgPos(val) {
+        if(!activeElement) return;
+        const tbl = activeElement.querySelector('.riddle-bg');
+        if(tbl) tbl.style.backgroundPosition = val;
+    }
+    function upRiddleHeadlineSize(px) { if(!activeElement) return; const el=activeElement.querySelector('.riddle-headline'); if(el) el.style.fontSize=px+'px'; }
+    function upRiddleHeadlineColor(c) { if(!activeElement) return; const el=activeElement.querySelector('.riddle-headline'); if(el) el.style.color=c; }
+    function upRiddleImageWidth(pct) {
+        if(!activeElement) return;
+        const leftCell  = activeElement.querySelector('.riddle-headline-cell');
+        const rightCell = activeElement.querySelector('.riddle-right-cell');
+        const right = 100 - parseInt(pct);
+        if(leftCell)  { leftCell.style.width  = pct  + '%'; leftCell.setAttribute('width',  pct + '%');  }
+        if(rightCell) { rightCell.style.width = right + '%'; rightCell.setAttribute('width', right + '%'); }
+    }
+    function upRiddleCardBg(sel, c) { if(!activeElement) return; const el=activeElement.querySelector(sel); if(el) { el.style.background=c; el.setAttribute('style', el.getAttribute('style').replace(/background:[^;]+;/, `background:${c};`)); } }
+    function upRiddleCardTextColor(sel, c) { if(!activeElement) return; const el=activeElement.querySelector(sel); if(el) el.style.color=c; }
+    function upRiddleCardTextSize(sel, px) { if(!activeElement) return; const el=activeElement.querySelector(sel); if(el) el.style.fontSize=px+'px'; }
+
+    // ─── EXPORT ──────────────────────────────────────────────────────────────
+
+    function prepareEmailClone() {
+        const clone = document.getElementById('dropZone').cloneNode(true);
+        const FONT  = "'Montserrat',Arial,Helvetica,sans-serif";
+
+        // 1. STRIP EDITOR CHROME
+        clone.querySelectorAll('.overlay-tools,.resize-handle,.img-link-badge,.fc-btn-toggle-row').forEach(el => el.remove());
+        clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+        clone.querySelectorAll('.comp-wrapper').forEach(w => { w.style.border='none'; w.classList.remove('active'); });
+        clone.querySelectorAll('button[onclick*="addEventRow"],button[onclick*="addProgRow"],button[onclick*="addFeaturedCard"]').forEach(b => {
+            const wrap = b.closest('.fc-add-wrap') || b.closest('div[style*="margin-top:12px"]');
+            if (wrap) wrap.remove(); else b.remove();
+        });
+        clone.querySelectorAll('.evt-url-row,.fc-card-img-input,.fc-btn-url,.fc-card-controls,.riddle-img-input-bar,.lgo-img-url-bar,.evt-remove-btn,.prog-remove-btn,.fc-btn-toggle-row,.fc-add-wrap').forEach(el => el.remove());
+
+        // 2. REMOVE HIDDEN LAYOUT VARIANTS
+        clone.querySelectorAll('.comp-wrapper').forEach(wrapper => {
+            const side  = wrapper.querySelector('.mt-side-layout');
+            const stack = wrapper.querySelector('.mt-stack-layout');
+            if (side && stack) {
+                if (side.style.display !== 'none') stack.remove();
+                else side.remove();
+            }
+            wrapper.querySelectorAll('.mt-title-top,.mt-title-middle,.mt-title-text-only,.block-title-area').forEach(ta => {
+                if (ta.style.display === 'none') ta.remove();
+            });
+        });
+
+        // 3. UNWRAP IMAGE RESIZE WRAPPERS
+        clone.querySelectorAll('.img-resize-wrapper').forEach(wrapper => {
+            const img = wrapper.querySelector('img');
+            if (!img) { wrapper.remove(); return; }
+            img.removeAttribute('width'); img.removeAttribute('height');
+            img.style.cssText = 'width:100%;max-width:100%;display:block;border:0;-ms-interpolation-mode:bicubic;' + (img.style.borderRadius ? 'border-radius:'+img.style.borderRadius+';' : '');
+            img.setAttribute('border','0');
+            const href = wrapper.dataset.imgHref || '';
+            if (href) {
+                const a = document.createElement('a');
+                a.href = href; a.target = wrapper.dataset.imgTarget || '_blank';
+                a.style.cssText = 'display:block;line-height:0;text-decoration:none;font-size:0;';
+                a.appendChild(img.cloneNode(true));
+                wrapper.parentNode.replaceChild(a, wrapper);
+            } else {
+                wrapper.parentNode.replaceChild(img.cloneNode(true), wrapper);
+            }
+        });
+
+        // 4. CONVERT fc-grid flex -> email TABLE
+        clone.querySelectorAll('.fc-grid').forEach(grid => {
+            const cols  = parseInt(grid.dataset.cols) || 2;
+            const cards = Array.from(grid.querySelectorAll(':scope > .fc-card'));
+            if (!cards.length) return;
+            const gap   = parseInt(grid.style.gap) || 20;
+            const colPx = Math.floor((620 - (cols-1)*gap) / cols);
+            let html = '<table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;"><tbody>';
+            for (let i=0; i<cards.length; i+=cols) {
+                html += '<tr>';
+                for (let j=0; j<cols; j++) {
+                    if (j>0) html += '<td class="loss" width="'+gap+'" style="width:'+gap+'px;font-size:0;line-height:0;">&nbsp;</td>';
+                    const card = cards[i+j];
+                    if (card) {
+                        const cc = card.cloneNode(true);
+                        cc.querySelectorAll('.fc-card-controls,.fc-card-img-input,.fc-btn-url,.resize-handle,.img-link-badge,.fc-btn-toggle-row').forEach(x=>x.remove());
+                        const imgWrap   = cc.querySelector('.fc-card-img-wrap');
+                        const titleWrap = cc.querySelector('.fc-card-title-wrap');
+                        const textWrap  = cc.querySelector('.fc-card-text-wrap');
+                        const btnWrap   = cc.querySelector('.fc-card-btn-wrap');
+                        let rows = '';
+                        if (imgWrap   && imgWrap.style.display  !== 'none') rows += '<tr><td style="padding-bottom:10px;">'+imgWrap.innerHTML+'</td></tr>';
+                        if (titleWrap && titleWrap.style.display !== 'none') {
+                            const tEl = titleWrap.querySelector('.fc-card-title');
+                            if (tEl) rows += '<tr><td style="padding-bottom:6px;'+(tEl.getAttribute('style')||'')+'">'+tEl.innerHTML+'</td></tr>';
+                        }
+                        if (textWrap  && textWrap.style.display !== 'none') {
+                            const txEl = textWrap.querySelector('.fc-card-text');
+                            if (txEl) rows += '<tr><td style="padding-bottom:10px;'+(txEl.getAttribute('style')||'')+'">'+txEl.innerHTML+'</td></tr>';
+                        }
+                        if (btnWrap && btnWrap.style.display !== 'none') {
+                            const bEl = btnWrap.querySelector('.fc-card-btn');
+                            if (bEl && bEl.style.display !== 'none') {
+                                const bg2  = bEl.style.background || bEl.style.backgroundColor || 'transparent';
+                                const tc2  = bEl.style.color || '#333';
+                                const fs2  = bEl.style.fontSize || '13px';
+                                const pad2 = bEl.style.padding || '9px 22px';
+                                const w2   = bEl.style.width ? 'width:'+bEl.style.width+';box-sizing:border-box;text-align:center;' : '';
+                                const bc2  = bEl.style.borderColor || '#888';
+                                const wrapAlign = btnWrap.style.textAlign || 'left';
+                                rows += '<tr><td style="padding-top:4px;text-align:'+wrapAlign+';"><a href="'+(bEl.href||'#')+'" style="display:inline-block;background:'+bg2+';color:'+tc2+';border:1.5px solid '+bc2+';padding:'+pad2+';border-radius:20px;text-decoration:none;font-weight:700;font-size:'+fs2+';font-family:'+FONT+';'+w2+'">'+bEl.innerHTML+'</a></td></tr>';
+                            }
+                        }
+                        html += '<th class="column" valign="top" width="'+colPx+'" style="width:'+colPx+'px;vertical-align:top;font-weight:normal;padding:0;"><table width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;"><tbody>'+rows+'</tbody></table></th>';
+                    } else {
+                        html += '<th class="column" width="'+colPx+'" style="width:'+colPx+'px;font-weight:normal;"></th>';
+                    }
+                }
+                html += '</tr>';
+                if (i+cols < cards.length) html += '<tr><td colspan="'+(cols*2-1)+'" style="height:'+gap+'px;font-size:0;line-height:0;">&nbsp;</td></tr>';
+            }
+            html += '</tbody></table>';
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            grid.parentNode.replaceChild(tmp.firstElementChild, grid);
+        });
+
+        // 5. CONVERT mt-stack-layout div -> TABLE
+        clone.querySelectorAll('.mt-stack-layout').forEach(stackDiv => {
+            const tbl = document.createElement('table');
+            tbl.setAttribute('width','100%'); tbl.setAttribute('border','0');
+            tbl.setAttribute('cellpadding','0'); tbl.setAttribute('cellspacing','0');
+            tbl.style.cssText = 'width:100%;border-collapse:collapse;';
+            Array.from(stackDiv.children).forEach(child => {
+                if (child.style.display === 'none') return;
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.setAttribute('align','left');
+                td.style.cssText = 'padding-bottom:12px;';
+                td.appendChild(child.cloneNode(true));
+                tr.appendChild(td); tbl.appendChild(tr);
+            });
+            stackDiv.parentNode.replaceChild(tbl, stackDiv);
+        });
+
+        // 6. INLINE FONT + LINE-HEIGHT
+        clone.querySelectorAll('p,div,span,td,th,h1,h2,h3,h4,h5,li,a').forEach(el => {
+            if (!el.style.fontFamily) el.style.fontFamily = FONT;
+        });
+        clone.querySelectorAll('p,div,span,h1,h2,h3,h4,h5,li').forEach(el => {
+            const fs = el.style.fontSize;
+            if (fs==='0px'||fs==='0') return;
+            if (el.style.lineHeight==='0'||el.style.lineHeight==='0px') return;
+            el.style.lineHeight = '1.2';
+        });
+
+        // 7. FIX CTA BUTTONS
+        clone.querySelectorAll('.sbs-btn,.block-cta-btn,.mt-cta-btn').forEach(btn => {
+            const bg2 = btn.style.background || btn.style.backgroundColor || '#a4343a';
+            const tc  = btn.style.color || '#ffffff';
+            btn.setAttribute('style','display:inline-block;background:'+bg2+';color:'+tc+';padding:12px 30px;border-radius:4px;text-decoration:none;font-weight:700;font-size:14px;line-height:1.2;font-family:'+FONT+';');
+        });
+
+        // 8. IMAGES — add follow class for mobile scaling
+        clone.querySelectorAll('img').forEach(img => {
+            img.removeAttribute('width'); img.removeAttribute('height');
+            const cls = (img.getAttribute('class')||'');
+            if (!cls.includes('follow')) img.setAttribute('class',(cls+' follow').trim());
+            img.style.display  = 'block';
+            img.style.maxWidth = '100%';
+            img.style.height   = 'auto';
+            img.setAttribute('border','0');
+        });
+
+        // 9. ALL TABLES — email-safe attributes
+        clone.querySelectorAll('table').forEach(tbl => {
+            if (!tbl.getAttribute('cellpadding')) tbl.setAttribute('cellpadding','0');
+            if (!tbl.getAttribute('cellspacing')) tbl.setAttribute('cellspacing','0');
+            if (!tbl.getAttribute('border'))      tbl.setAttribute('border','0');
+            tbl.style.borderCollapse = 'collapse';
+        });
+
+        // 10. WRAP each .comp-wrapper in the reference container-48 / container-48s pattern
+        // outer: full-width bg strip
+        // middle: container-48 (800px, 100% on mobile)
+        // inner: container-48s (700px, 90% on mobile)
+        const blocks = Array.from(clone.querySelectorAll('.comp-wrapper'));
+        let exportRows = '';
+
+        blocks.forEach(compWrapper => {
+            const bgTarget = compWrapper.querySelector('.bg-target');
+            let bgColor='#ffffff', pT=20, pR=40, pB=20, pL=40, borderTop='', borderBottom='';
+            let isNativeTbl = false;
+
+            if (bgTarget) {
+                if (bgTarget.tagName === 'TABLE') {
+                    isNativeTbl = true;
+                    bgColor = bgTarget.getAttribute('bgcolor') || bgTarget.style.backgroundColor || '#1a1a1a';
+                    pT=pR=pB=pL=0;
+                } else {
+                    // Read bg — prefer backgroundColor (longhand), fall to background shorthand
+                    let _bg = bgTarget.getAttribute('data-bg') || bgTarget.style.backgroundColor || bgTarget.style.background || '#ffffff';
+                    // Convert rgb(...) to hex so bgcolor attribute works
+                    if (_bg.startsWith('rgb')) {
+                        const m = _bg.match(/\d+/g);
+                        if (m && m.length >= 3) {
+                            _bg = '#' + [m[0],m[1],m[2]].map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+                        }
+                    }
+                    bgColor = _bg;
+                    const pad = bgTarget.style.padding || '20px 40px';
+                    const parts = pad.trim().split(/\s+/).map(p=>parseInt(p)||0);
+                    if (parts.length===1) { pT=pR=pB=pL=parts[0]; }
+                    else if (parts.length===2) { pT=pB=parts[0]; pR=pL=parts[1]; }
+                    else if (parts.length===3) { pT=parts[0]; pR=pL=parts[1]; pB=parts[2]; }
+                    else { pT=parts[0]; pR=parts[1]; pB=parts[2]; pL=parts[3]; }
+                    borderTop    = bgTarget.style.borderTop    || '';
+                    borderBottom = bgTarget.style.borderBottom || '';
+                }
+            }
+
+            const safeBg = (bgColor&&(bgColor.startsWith('#')||bgColor.startsWith('rgb'))) ? bgColor : '#ffffff';
+            let contentHtml = '';
+            if (isNativeTbl) {
+                contentHtml = bgTarget.outerHTML;
+            } else if (bgTarget) {
+                // Strip padding from bg-target: the container-48s <td> handles padding instead
+                bgTarget.style.padding = '0';
+                contentHtml = bgTarget.innerHTML;
+            } else {
+                contentHtml = compWrapper.innerHTML;
+            }
+
+            exportRows += `
+<table bgcolor="${safeBg}" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${bgColor};${borderTop?'border-top:'+borderTop+';':''}${borderBottom?'border-bottom:'+borderBottom+';':''}">
+  <tr>
+    <td align="center" style="padding:0;">
+      <table class="container-48" bgcolor="${safeBg}" width="800" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:800px;min-width:800px;background:${bgColor};">
+        <tr>
+          <td align="center" style="padding:0;">
+            <table class="container-48s" bgcolor="${safeBg}" width="700" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:700px;min-width:700px;background:${bgColor};">
+              <tr>
+                <td align="left" valign="top" style="padding:${isNativeTbl ? '0' : pT+'px '+pR+'px '+pB+'px '+pL+'px'};font-family:${FONT};color:#333333;">
+${contentHtml}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+        });
+
+        // 11. FINAL HTML WRAPPER — identical header to reference file
+        const outerHtml = `<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"
+   xmlns:v="urn:schemas-microsoft-com:vml"
+   xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="format-detection" content="telephone=no" />
+<meta name="format-detection" content="date=no" />
+<meta name="format-detection" content="address=no" />
+<meta name="format-detection" content="email=no" />
+<meta name="x-apple-disable-message-reformatting" />
+<title>SBS Newsletter</title>
+<!--[if gte mso 9]>
+<xml>
+  <o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings>
+</xml>
+<![endif]-->
+<!--[if mso]>
+<xml xmlns:w="urn:schemas-microsoft-com:office:word">
+  <w:WordDocument><w:AutoHyphenation/></w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,600;1,700&display=swap');
+  html{width:100%;}
+  body{margin:0;padding:0;width:100%;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;text-size-adjust:none;background:#eeeeee;font-family:'Montserrat',Arial,Helvetica,sans-serif;}
+  img{display:block!important;border:0;-ms-interpolation-mode:bicubic;}
+  img[class=follow],td[class=follow]{width:100%!important;height:auto!important;}
+  .images{display:block!important;width:100%!important;}
+  p{margin:0!important;padding:0!important;}
+  a{text-decoration:none!important;}
+  .ReadMsgBody{width:100%;} .ExternalClass{width:100%;}
+  .ExternalClass,.ExternalClass p,.ExternalClass span,.ExternalClass font,.ExternalClass td,.ExternalClass div{line-height:100%;}
+  @media only screen and (max-width:650px){
+    table[class=container-48]{width:100%!important;min-width:100%!important;}
+    table[class=container-48s]{width:90%!important;min-width:90%!important;}
+    th[class=column]{box-sizing:border-box;display:inline-block!important;line-height:inherit!important;width:100%!important;word-break:break-word;}
+    img[class=follow],td[class=follow]{width:100%!important;height:auto!important;}
+    td[class=loss]{display:none!important;}
+    td[class=nsl-media-cell],td[class=nsl-text-cell]{display:block!important;width:100%!important;padding-left:0!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#eeeeee;font-family:'Montserrat',Arial,Helvetica,sans-serif;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;">
+<!--[if mso]><style>body,table,td{font-family:Arial,Helvetica,sans-serif!important;}</style><![endif]-->
+${exportRows}
+</body>
+</html>`;
+        return outerHtml;
+    }
+
+        async function exportNewsletter() {
+        const html = prepareEmailClone();
+        await navigator.clipboard.writeText(html);
+        alert("✅ Success! The full email HTML is copied to your clipboard.\n\nImage links are preserved in the export.");
+    }
+    
+    async function copyNewsletterForEmail() {
+        const html = prepareEmailClone();
+        try {
+            const htmlBlob = new Blob([html], { type: 'text/html' });
+            const textBlob = new Blob(['Newsletter content — please view in an HTML-capable email client.'], { type: 'text/plain' });
+            await navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })]);
+            alert('✅ Newsletter copied as rich HTML!\n\nOpen Outlook, create a new email, and press Ctrl+V to paste.');
+        } catch(e) {
+            await navigator.clipboard.writeText(html);
+            alert('📋 Full HTML source copied to clipboard.\n\nPaste into your email platform\'s HTML editor.');
+        }
+    }
+
+    // ─── TEMPLATE SYSTEM ─────────────────────────────────────────────────────
+
+    const TMPL_KEY = 'sbs_studio_templates';
+    let _tmplActiveTab = 'starter';
+
+    const STARTER_TEMPLATES = [
+        { id:'tpl_event_announce', name:'Event Announcement', desc:'Header, title, featured events block, queries footer.', tag:'STARTER', blocks:['header','thin-title','events-block','footer-queries'] },
+        { id:'tpl_programme_update', name:'Programme Update', desc:'Header, intro text, programmes list, corporate footer.', tag:'STARTER', blocks:['header','thin-title','text-only','programmes-block','footer-corp'] },
+        { id:'tpl_featured_news', name:'Featured Articles', desc:'Header, section title, 2-column article cards, footer.', tag:'STARTER', blocks:['header','thin-title','featured-cards','footer-queries'] },
+        { id:'tpl_media_brief', name:'Media Brief', desc:'Header, media+text side layout, text block, footer.', tag:'STARTER', blocks:['header','media-text','text-only','footer-corp'] },
+        { id:'tpl_full_newsletter', name:'Full Newsletter', desc:'Complete layout: header, title, articles, events, programmes, footer.', tag:'STARTER', blocks:['header','thin-title','featured-cards','events-block','programmes-block','footer-queries','footer-corp'] },
+        { id:'tpl_minimal', name:'Minimal Announcement', desc:'Clean single message: header, text block, CTA footer.', tag:'STARTER', blocks:['header','text-only','footer-queries'] }
+    ];
+
+    function openTemplates() { document.getElementById('tmpl-overlay').classList.add('open'); tmplRenderTab(_tmplActiveTab); }
+    function closeTemplates() { document.getElementById('tmpl-overlay').classList.remove('open'); }
+    document.getElementById('tmpl-overlay').addEventListener('click', function(e) { if(e.target === this) closeTemplates(); });
+
+    function tmplSwitchTab(tab, el) {
+        _tmplActiveTab = tab;
+        document.querySelectorAll('.tmpl-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        tmplRenderTab(tab);
+    }
+
+    function tmplRenderTab(tab) {
+        const grid = document.getElementById('tmpl-grid');
+        grid.innerHTML = '';
+        if(tab === 'starter') {
+            STARTER_TEMPLATES.forEach(tpl => grid.appendChild(tmplMakeCard(tpl, false)));
+        } else {
+            const saved = tmplGetSaved();
+            if(saved.length === 0) {
+                grid.innerHTML = `<div class="tmpl-empty" style="grid-column:1/-1;"><span>💾</span>No saved templates yet.<br>Build a newsletter and click <b>Save</b> below.</div>`;
+                return;
+            }
+            saved.forEach(tpl => grid.appendChild(tmplMakeCard(tpl, true)));
+        }
+    }
+
+    function tmplMakeCard(tpl, isDeletable) {
+        const card = document.createElement('div');
+        card.className = 'tmpl-card';
+        const blockColors = {'header':'#a4343a','thin-title':'#e8e8e8','text-only':'#f5f5f5','media-text':'#eef3ff','featured-cards':'#fff8f0','events-block':'#f0f4ff','programmes-block':'#f8f9fa','footer-queries':'#002147','footer-corp':'#f9f9f9'};
+        const blockNames = {'header':'Banner','thin-title':'Title','text-only':'Text','media-text':'Media+Text','featured-cards':'Cards Grid','events-block':'Events','programmes-block':'Programmes','footer-queries':'Footer','footer-corp':'Footer'};
+        const blocks = tpl.blocks || [];
+        const stripsHtml = blocks.map(b => {
+            const c = blockColors[b] || '#eee';
+            const n = blockNames[b] || b;
+            const textCol = (b==='header'||b==='footer-queries') ? '#fff' : '#555';
+            return `<div style="background:${c};color:${textCol};font-size:8px;padding:3px 6px;font-weight:600;letter-spacing:0.3px;border-bottom:1px solid rgba(0,0,0,0.04);flex-shrink:0;">${n}</div>`;
+        }).join('');
+        card.innerHTML = `
+            <div class="tmpl-preview" style="display:flex; flex-direction:column; height:140px; overflow:hidden;">${stripsHtml}</div>
+            <div class="tmpl-info">
+                <div class="tmpl-tag">${tpl.tag||'SAVED'}</div>
+                <div class="tmpl-name">${tpl.name}</div>
+                <div class="tmpl-desc">${tpl.desc||''}</div>
+            </div>
+            <div class="tmpl-actions">
+                <button class="tmpl-use-btn" onclick="tmplLoad('${tpl.id}', ${isDeletable})">▶ Use Template</button>
+                ${isDeletable ? `<button class="tmpl-del-btn" onclick="tmplDelete('${tpl.id}', event)" title="Delete">🗑</button>` : ''}
+            </div>`;
+        return card;
+    }
+
+    function tmplLoad(id, isSaved) {
+        const confirmed = confirm('Load this template? Your current canvas will be replaced.\n\nTip: Save your current work first.');
+        if(!confirmed) return;
+        let tpl = isSaved ? tmplGetSaved().find(t=>t.id===id) : STARTER_TEMPLATES.find(t=>t.id===id);
+        if(!tpl) return;
+        document.getElementById('dropZone').innerHTML = '';
+        activeElement = null; _activeImgWrapper = null;
+        document.getElementById('dynamicControls').innerHTML = '<h3>3. Component Settings</h3><p style="font-size:10px; opacity:0.5;">Click a container on the canvas to edit.</p>';
+        if(tpl.html) {
+            document.getElementById('dropZone').innerHTML = tpl.html;
+            document.getElementById('dropZone').querySelectorAll('.comp-wrapper').forEach(wrapper => {
+                wrapper.onclick = (e) => {
+                    const isEditable = e.target.isContentEditable || e.target.closest('[contenteditable]');
+                    e.stopPropagation();
+                    selectElement(wrapper, !isEditable);
+                };
+                wrapImagesInBlock(wrapper);
+            });
+        } else {
+            (tpl.blocks || []).forEach(type => createBlock(type));
+        }
+        _reattachImgObserver();
+        closeTemplates();
+    }
+
+    function tmplDelete(id, e) {
+        e.stopPropagation();
+        if(!confirm('Delete this template?')) return;
+        const saved = tmplGetSaved().filter(t=>t.id!==id);
+        localStorage.setItem(TMPL_KEY, JSON.stringify(saved));
+        tmplRenderTab('saved');
+    }
+
+    function saveCurrentAsTemplate() {
+        const name = document.getElementById('tmpl-name-input').value.trim();
+        if(!name) { alert('Please enter a template name.'); return; }
+        const html = document.getElementById('dropZone').innerHTML;
+        if(!html.trim()) { alert('The canvas is empty.'); return; }
+        const saved = tmplGetSaved();
+        const dupIdx = saved.findIndex(t=>t.name.toLowerCase()===name.toLowerCase());
+        if(dupIdx > -1) { if(!confirm(`A template named "${name}" already exists. Overwrite it?`)) return; saved.splice(dupIdx,1); }
+        const tpl = {
+            id: 'tpl_saved_'+Date.now(), name,
+            desc: `Saved on ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`,
+            tag: 'SAVED',
+            blocks: Array.from(document.getElementById('dropZone').querySelectorAll('.comp-wrapper')).map(w=>w.dataset.type),
+            html
+        };
+        saved.unshift(tpl);
+        localStorage.setItem(TMPL_KEY, JSON.stringify(saved));
+        document.getElementById('tmpl-name-input').value = '';
+        alert(`✅ Template "${name}" saved!`);
+        tmplRenderTab('saved');
+        document.querySelectorAll('.tmpl-tab').forEach((t,i)=>t.classList.toggle('active',i===1));
+        _tmplActiveTab = 'saved';
+    }
+
+    function tmplGetSaved() { try { return JSON.parse(localStorage.getItem(TMPL_KEY)||'[]'); } catch(e) { return []; } }
+
+    // ─── GLOBAL DESELECT ─────────────────────────────────────────────────────
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.comp-wrapper') && !e.target.closest('#sidebar')) {
+            if (activeElement) activeElement.classList.remove('active');
+            activeElement = null;
+            deselectAllImages();
+            document.getElementById('dynamicControls').innerHTML = '<h3>Settings</h3><p style="font-size:10px; opacity:0.5;">Select a block.</p>';
+        }
+        // Deselect image if clicking inside block but not on image or handle
+        if (e.target.closest('.comp-wrapper') && !e.target.closest('.img-resize-wrapper') && !e.target.classList.contains('resize-handle')) {
+            deselectAllImages();
+        }
+    });
+
+</script>
+</body>
+</html>
